@@ -6,13 +6,15 @@ client, RBS signatures, and packed-gem consumer qualification.
 
 ## Installation
 
-Add the gem to your bundle:
+The current release is a release candidate. Add its exact version to your bundle:
 
 ```ruby
-gem "verifiabl-issuer"
+gem "verifiabl-issuer", "0.1.0-rc.2"
 ```
 
-Then run `bundle install`. Bundler loads the gem through its package-name entry point:
+Then run `bundle install`. Keep the exact version until a stable release is available.
+
+Bundler loads the gem through its package-name entry point:
 
 ```ruby
 require "verifiabl-issuer"

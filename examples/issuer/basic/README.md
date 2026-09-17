@@ -6,10 +6,10 @@ They support Ruby 3.3 and newer.
 
 ## Setup
 
-Install the released gem from RubyGems:
+Install the release candidate from RubyGems:
 
 ```sh
-gem install verifiabl-issuer
+gem install verifiabl-issuer --version 0.1.0-rc.2
 cd examples/issuer/basic
 bundle install
 ```
