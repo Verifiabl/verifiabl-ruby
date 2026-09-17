@@ -4,6 +4,8 @@ All notable changes to the Verifiabl Ruby SDK will be documented in this file.
 
 ## Unreleased
 
+## [0.1.0-rc.1] - 2026-09-17
+
 - Generate Ruby PII profile constants, QR frame policy, frame assets, and renderer parity fixtures from canonical cross-SDK tooling, and add Ruby CodeQL coverage.
 - **Breaking:** expose and accept ciphertext, AES-GCM IV, and authentication tag values as binary strings. The SDK now applies base64url only at the issuer API boundary and Base32 at the v2 barcode and XMP boundary, allowing callers to persist encrypted values directly in binary database columns.
 - Add a runnable self-managed issuance example and generated, drift-checked usage documentation.
