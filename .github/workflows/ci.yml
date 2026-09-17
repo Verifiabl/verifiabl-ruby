@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        ruby-version: ["3.3", "3.4", "3.5", "4.0"]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1.321.0
+        with:
+          ruby-version: ${{ matrix.ruby-version }}
+          bundler-cache: true
+      - run: bundle exec rake
+      - run: bundle exec gem build verifiabl-issuer.gemspec
+        working-directory: gems/verifiabl-issuer
+      - run: bundle exec ruby script/packed_gem_check.rb
+      - name: Validate basic example
+        run: ruby script/basic_example_check.rb
+
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1.321.0
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+      # Runtime and development gems use the same advisory policy because test,
+      # lint, and build dependencies execute in trusted CI and release jobs.
+      - run: bundle exec bundle-audit check --update
+      - run: bundle exec bundle-audit check --gemfile-lock examples/issuer/basic/Gemfile.lock

@@ -1,0 +1,52 @@
+{
+  "_provenance": {
+    "schema": "verifiabl-cross-sdk-qr-artifacts-v1",
+    "generatedBy": "@verifiabl/sdks cross-SDK QR artifact generator v1",
+    "source": {
+      "package": "@verifiabl/issuer",
+      "version": "0.23.0"
+    },
+    "tools": {
+      "node": "v26.8.1",
+      "pngjs": "7.0.0",
+      "qrcode": "1.5.4",
+      "resvg": "2.6.2"
+    }
+  },
+  "default-480": {
+    "width": 480,
+    "height": 750,
+    "content": "https://v.verifiabl.io/v/u0FE9WLIS7GYKQnpJPygBw#2.AG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXM46X36Y",
+    "errorCorrectionLevel": "M",
+    "qrVersion": 12,
+    "modulePx": 7.38,
+    "degraded": false
+  },
+  "short-default-480": {
+    "width": 480,
+    "height": 750,
+    "content": "https://v.verifiabl.io/v/u0FE9WLIS7GYKQnpJPygBw#2.AA",
+    "errorCorrectionLevel": "M",
+    "qrVersion": 4,
+    "modulePx": 14.55,
+    "degraded": false
+  },
+  "sandbox-q-720": {
+    "width": 720,
+    "height": 1125,
+    "content": "https://v.sandbox.verifiabl.io/v/u0FE9WLIS7GYKQnpJPygBw#2.AG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXM46X36Y",
+    "errorCorrectionLevel": "Q",
+    "qrVersion": 15,
+    "modulePx": 9.35,
+    "degraded": false
+  },
+  "v1-default-480": {
+    "width": 480,
+    "height": 750,
+    "content": "https://verify.verifiabl.io/v/u0FE9WLIS7GYKQnpJPygBw#1.Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Zz19-w",
+    "errorCorrectionLevel": "M",
+    "qrVersion": 13,
+    "modulePx": 6.96,
+    "degraded": false
+  }
+}

@@ -1,0 +1,136 @@
+module Verifiabl
+  module Issuer
+    VERSION: String
+
+    type binary = String
+
+    def self.format_pii: (Hash[Symbol | String, String?]) -> String
+    def self.encrypt_pii: (String, binary) -> Crypto::EncryptedPii
+    def self.generate_verifiabl_reference: () -> String
+    def self.build_barcode_payload: (verifiabl_reference: String, encrypted_pii: binary) -> String
+    def self.build_scan_url: (verifiabl_reference: String, encrypted_pii: binary, ?environment: Symbol | String, ?scan_base_url: String?) -> String
+    def self.build_barcode_svg: (verifiabl_reference: String, encrypted_pii: binary, ?width: Numeric, ?environment: Symbol | String, ?scan_base_url: String?, ?max_error_correction: Symbol | String, ?error_correction_level: Symbol | String) -> Rendering::SvgResult
+    def self.build_barcode_png: (verifiabl_reference: String, encrypted_pii: binary, ?width: Integer, ?environment: Symbol | String, ?scan_base_url: String?, ?max_error_correction: Symbol | String, ?error_correction_level: Symbol | String, ?compression_level: Integer) -> Rendering::PngResult
+
+    class Configuration
+      attr_reader client_id: String?
+      attr_reader client_secret: String?
+      attr_reader issuer_base_url: String?
+      attr_reader token_url: String?
+      attr_reader timeout: Numeric
+      attr_reader max_retries: Integer
+      attr_reader on_request: Proc?
+      attr_reader on_response: Proc?
+      attr_reader on_error: Proc?
+      attr_reader environment: Symbol
+      def initialize: (?client_id: String?, ?client_secret: String?, ?environment: Symbol | String, ?issuer_base_url: String?, ?token_url: String?, ?timeout: Numeric, ?max_retries: Integer, ?on_request: Proc?, ?on_response: Proc?, ?on_error: Proc?) -> void
+    end
+
+    class Client
+      def initialize: (Configuration, ?transport: untyped, ?clock: untyped, ?sleeper: untyped, ?random: Random?, ?monotonic_clock: untyped) -> void
+      def register_non_pii: (?verifiabl_reference: String?, schema: String, issued_at: String | Time, payslip_non_pii: Hash[Symbol | String, untyped], encryption_metadata: Hash[Symbol | String, binary]) -> Responses::Registration
+      def register_non_pii_batch: (Array[Hash[Symbol | String, untyped]]) -> Responses::BatchRegistration
+      def register_and_build_barcode: (encrypted_pii: binary, schema: String, issued_at: String | Time, payslip_non_pii: Hash[Symbol | String, untyped], encryption_metadata: Hash[Symbol | String, binary]) -> Responses::BarcodeRegistration
+    end
+
+    class Error < StandardError
+    end
+
+    class ApiError < Error
+      attr_reader status: Integer
+      attr_reader code: String
+      attr_reader body: Hash[String, untyped]?
+      attr_reader request_id: String?
+    end
+
+    class IvReuseError < ApiError
+    end
+
+    class AuthError < Error
+      attr_reader status: Integer?
+    end
+
+    class TransportError < Error
+    end
+
+    class TimeoutError < TransportError
+      attr_reader timeout: Numeric
+    end
+
+    module Responses
+      class Registration < Data
+        attr_reader verifiabl_reference: String
+      end
+      class BarcodeImage < Data
+        attr_reader format: String
+        attr_reader data: String
+      end
+      class BarcodeRegistration < Data
+        attr_reader verifiabl_reference: String
+        attr_reader barcode: BarcodeImage
+      end
+      class BatchRecord < Data
+        attr_reader status: String
+        attr_reader verifiabl_reference: String
+        attr_reader external_id: String?
+        attr_reader code: String?
+        attr_reader detail: String?
+      end
+      class BatchRegistration < Data
+        attr_reader results: Array[BatchRecord]
+      end
+    end
+
+    module Crypto
+      class EncryptedPii < Data
+        attr_reader encrypted_pii: binary
+        attr_reader encryption_metadata: Hash[Symbol, binary]
+      end
+    end
+
+    module Payload
+      class ScanUrlParts < Data
+        attr_reader content: String
+        attr_reader byte_prefix: String
+        attr_reader alphanumeric_ciphertext: String
+      end
+    end
+
+    module Rendering
+      class SvgResult < Data
+        attr_reader svg: String
+        attr_reader width: Numeric
+        attr_reader height: Numeric
+        attr_reader content: String
+        attr_reader error_correction_level: Symbol
+        attr_reader qr_version: Integer
+        attr_reader module_px: Numeric
+        attr_reader degraded: bool
+      end
+      class PngResult < Data
+        attr_reader png: String
+        attr_reader width: Integer
+        attr_reader height: Integer
+        attr_reader content: String
+        attr_reader error_correction_level: Symbol
+        attr_reader qr_version: Integer
+        attr_reader module_px: Numeric
+        attr_reader degraded: bool
+      end
+    end
+
+    module Qr
+      class CapacityError < ArgumentError
+      end
+
+      class Result < Data
+        attr_reader content: String
+        attr_reader modules: Array[Array[bool]]
+        attr_reader version: Integer
+        attr_reader mask_pattern: Integer
+        attr_reader error_correction_level: Symbol
+        attr_reader segment_modes: Array[Symbol]
+      end
+    end
+  end
+end

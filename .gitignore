@@ -1,0 +1,7 @@
+/.bundle/
+/pkg/
+/coverage/
+*.gem
+.env
+.env.*
+.DS_Store

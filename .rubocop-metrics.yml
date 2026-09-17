@@ -1,0 +1,33 @@
+# Complexity checks supplement StandardRB without introducing a competing style
+# configuration. Keep this file metrics-only.
+AllCops:
+  DisabledByDefault: true
+  NewCops: enable
+  SuggestExtensions: false
+  Exclude:
+    - "gems/*/test/**/*"
+    - "vendor/**/*"
+
+Metrics/AbcSize:
+  Enabled: true
+  Max: 20
+
+Metrics/CyclomaticComplexity:
+  Enabled: true
+  Max: 8
+
+Metrics/PerceivedComplexity:
+  Enabled: true
+  Max: 9
+
+Metrics/MethodLength:
+  Enabled: true
+  Max: 25
+
+Metrics/ParameterLists:
+  Enabled: true
+  Max: 5
+
+Metrics/BlockNesting:
+  Enabled: true
+  Max: 3

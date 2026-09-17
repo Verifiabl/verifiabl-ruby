@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "versionPolicy": {
+    "name": "SemVer 2.0 without build metadata",
+    "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-(?:(?:0|[1-9][0-9]*)|[0-9]*[A-Za-z-][0-9A-Za-z-]*)(?:\\.(?:(?:0|[1-9][0-9]*)|[0-9]*[A-Za-z-][0-9A-Za-z-]*))*)?$"
+  },
+  "targets": [
+    {
+      "id": "ruby/issuer",
+      "ecosystem": "ruby",
+      "role": "issuer",
+      "publicRepository": "Verifiabl/verifiabl-ruby",
+      "changelog": "gems/verifiabl-issuer/CHANGELOG.md",
+      "tags": {
+        "privatePrefix": "ruby/issuer/v",
+        "publicPrefix": "issuer/v"
+      },
+      "packages": [
+        {
+          "id": "verifiabl-issuer",
+          "versionSource": {
+            "kind": "ruby",
+            "path": "gems/verifiabl-issuer/verifiabl-issuer.gemspec",
+            "versionPath": "gems/verifiabl-issuer/lib/verifiabl/issuer/version.rb",
+            "versionConstant": "VERSION"
+          }
+        }
+      ],
+      "coupledVersionGroups": [],
+      "packCommands": [
+        {
+          "cwd": "gems/verifiabl-issuer",
+          "run": [
+            "bundle",
+            "exec",
+            "gem",
+            "build",
+            "verifiabl-issuer.gemspec",
+            "--output",
+            "../../artifacts/verifiabl-issuer-{version}.gem"
+          ]
+        }
+      ]
+    }
+  ]
+}

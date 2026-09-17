@@ -1,0 +1,63 @@
+name: Release
+
+# Publishes to RubyGems.org when a GitHub release is published.
+#
+# Authentication uses RubyGems trusted publishing (OIDC); do not add an API
+# key secret. One-time setup after Verifiabl/verifiabl-ruby exists:
+#   1. RubyGems.org → verifiabl-issuer → Trusted publishers → GitHub Actions.
+#   2. Set owner Verifiabl, repository verifiabl-ruby, workflow release.yml,
+#      and environment rubygems-publish.
+#   3. In GitHub create the rubygems-publish environment, restrict deployment
+#      to protected issuer/v* tags, and require a Verifiabl release reviewer.
+# If publication fails before RubyGems accepts the gem, rerun the job. If the
+# version exists, never move/delete its tags or overwrite it; prepare a new
+# patch version through the private release workflow.
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.event.release.tag_name }}
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: rubygems-publish
+    permissions:
+      contents: read
+      id-token: write # OIDC token for RubyGems trusted publishing
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.release.tag_name }}
+          persist-credentials: false
+      - uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1.321.0
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+      - name: Validate the release target and tag checkout
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: node .github/scripts/release-tool.mjs validate-checkout "$TAG"
+      - run: bundle exec rake
+      - run: mkdir artifacts
+      - name: Map the SemVer release to its RubyGems version
+        run: ruby -rrubygems -e 'version = Gem::Version.new(ENV.fetch("VERSION")).to_s; File.open(ENV.fetch("GITHUB_ENV"), "a") { |file| file.puts("RUBYGEMS_VERSION=#{version}") }'
+      - name: Build the configured gem
+        run: node .github/scripts/release-tool.mjs pack "$RELEASE_TARGET_ID" "$VERSION"
+      - name: Inspect and consume the packed gem
+        run: |
+          ruby -rrubygems/package -e 'path = Dir["artifacts/*.gem"].fetch(0); spec = Gem::Package.new(path).spec; abort "wrong gem name" unless spec.name == "verifiabl-issuer"; abort "wrong gem version" unless spec.version.to_s == ENV.fetch("RUBYGEMS_VERSION"); abort "empty gem" if spec.files.empty?'
+          bundle exec ruby script/packed_gem_check.rb "artifacts/verifiabl-issuer-${VERSION}.gem"
+      - name: Verify tracked release sources are clean
+        run: node .github/scripts/release-tool.mjs verify-clean
+      # Mint OIDC credentials only after validation, tests, build, inspection,
+      # and the isolated packed-gem consumer check have completed.
+      - name: Configure RubyGems trusted-publishing credentials
+        uses: rubygems/configure-rubygems-credentials@dc5a8d8553e6ee01fc26761a49e99e733d17954a # v2.1.0
+      - name: Publish the already-inspected gem
+        run: gem push "artifacts/verifiabl-issuer-${VERSION}.gem"

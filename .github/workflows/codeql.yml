@@ -1,0 +1,35 @@
+name: CodeQL
+
+# Static analysis (SAST) on every PR and on main, per the ISMS SDLC
+# policy requirement that SAST and SCA run before merge (SCA is the
+# bundle-audit job in ci.yml).
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "30 18 * * 1" # weekly, Tuesday 04:30 AEST
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: github/codeql-action/init@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # v4.38.0
+        with:
+          languages: ruby
+          queries: security-and-quality
+      - uses: github/codeql-action/analyze@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # v4.38.0
