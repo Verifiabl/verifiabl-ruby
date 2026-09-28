@@ -21,6 +21,7 @@ class ClientTest < Minitest::Test
     assert_equal 1, requests.count { |request| request.fetch(:url).include?("/oauth/token") }
     api_requests = requests.reject { |request| request.fetch(:url).include?("/oauth/token") }
     assert api_requests.all? { |request| request.fetch(:headers).fetch("authorization") == "Bearer token-1" }
+    assert requests.all? { |request| request.fetch(:headers).fetch("user-agent") == "verifiabl-issuer-ruby/#{Verifiabl::Issuer::VERSION} (ruby #{RUBY_VERSION})" }
   end
 
   def test_accepts_oauth_bearer_token_type_case_insensitively
@@ -456,7 +457,7 @@ class ClientTest < Minitest::Test
     requests = []
     good_reference = "Xk2mP9qRsT4uVwYzAbCdEf"
     bad = registration.merge(schema: "au.payslip.v2", verifiabl_reference: "AbCdEfGhIjKlMnOpQrStUv", external_id: "bad-1",
-      payslip_non_pii: {period_end: "2026-06-15", gross: {value: {employee_name: "Jane"}}})
+      payslip_non_pii: {period_end: "2026-06-15", currency: "AUD", gross: {employee_name: "Jane"}})
     good = registration.merge(verifiabl_reference: good_reference)
     client = build_client(lambda do |**request|
       requests << request

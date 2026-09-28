@@ -22,9 +22,9 @@ PAYSLIP = {
     period_end: "2026-08-31",
     payment_date: "2026-09-04",
     currency: "AUD",
-    gross: Verifiabl::Issuer.payslip_number("9000.00"),
-    paygw: Verifiabl::Issuer.payslip_number("2250.00"),
-    net: Verifiabl::Issuer.payslip_number("6750.00")
+    gross: "9000.00",
+    paygw: "2250.00",
+    net: "6750.00"
   }
 }.freeze
 

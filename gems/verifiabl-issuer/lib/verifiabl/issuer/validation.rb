@@ -67,10 +67,9 @@ module Verifiabl
       private_class_method :validate_payslip_non_pii!
 
       def validate_v2_currency!(payslip_non_pii)
-        return unless key?(payslip_non_pii, :currency)
         return if SUPPORTED_V2_CURRENCIES.include?(value(payslip_non_pii, :currency))
 
-        raise ArgumentError, "currency must be one of #{SUPPORTED_V2_CURRENCIES.join(", ")}"
+        raise ArgumentError, "currency is required and must be a supported ISO 4217 currency code, for example AUD"
       end
       private_class_method :validate_v2_currency!
 

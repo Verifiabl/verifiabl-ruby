@@ -11,7 +11,7 @@ register only the non-PII fields as payslip data. They support Ruby 3.3 and newe
 Install the release candidate from RubyGems:
 
 ```sh
-gem install verifiabl-issuer --version 0.1.0-rc.3
+gem install verifiabl-issuer --version 0.1.0-rc.4
 cd examples/issuer/basic
 bundle install
 ```

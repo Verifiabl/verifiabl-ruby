@@ -161,7 +161,7 @@ module Verifiabl
       end
 
       def json_headers
-        {"content-type" => "application/json", "accept" => "application/json", "user-agent" => "verifiabl-ruby/#{VERSION}"}
+        {"content-type" => "application/json", "accept" => "application/json", "user-agent" => "verifiabl-issuer-ruby/#{VERSION} (ruby #{RUBY_VERSION})"}
       end
 
       def access_token(deadline)

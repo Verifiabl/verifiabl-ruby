@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "bigdecimal"
 require_relative "test_helper"
 
 class ValidationTest < Minitest::Test
@@ -22,22 +23,20 @@ class ValidationTest < Minitest::Test
     assert_empty batch[2]
   end
 
-  def test_v2_rejects_unknown_fields_at_every_depth_but_defers_values_to_the_api
+  def test_v2_rejects_unknown_fields_at_every_depth
     %w[au.payslip.v2 nz.payslip.v2].each do |schema|
-      [{"employee_name" => "Jane"}, {"gross" => {"value" => "100", "employee_name" => "Jane"}},
+      [{"employee_name" => "Jane"}, {"hourly" => {"hours" => "76", "employee_name" => "Jane"}},
         {"deductions" => [{"account_name" => "Jane"}]}].each do |payslip|
         assert_raises(ArgumentError) { Verifiabl::Issuer::NonPiiV2.validate!(schema, payslip) }
       end
-      Verifiabl::Issuer::NonPiiV2.validate!(schema, {"gross" => {"value" => "not a decimal"}})
+      Verifiabl::Issuer::NonPiiV2.validate!(schema, {"gross" => "100", "payment_date" => "not a date"})
     end
   end
 
   def test_v2_rejects_containers_at_scalar_leaves_but_defers_scalar_values
     %w[au.payslip.v2 nz.payslip.v2].each do |schema|
-      [{gross: {value: {employee_name: "Jane"}}},
-        {gross: {value: [{employee_name: "Jane"}]}},
-        {payment_date: {employee_name: "Jane"}},
-        {earnings: [{amount: {value: {employee_name: "Jane"}}}]}].each do |payslip|
+      [{payment_date: {employee_name: "Jane"}},
+        {payment_date: [{employee_name: "Jane"}]}].each do |payslip|
         error = assert_raises(ArgumentError) do
           Verifiabl::Issuer::Serialization.registration_to_wire(
             **VALID.merge(schema:, payslip_non_pii: v2_payload(schema, payslip))
@@ -48,9 +47,30 @@ class ValidationTest < Minitest::Test
       end
 
       wire = Verifiabl::Issuer::Serialization.registration_to_wire(
-        **VALID.merge(schema:, payslip_non_pii: v2_payload(schema, gross: {value: "not a decimal"}))
+        **VALID.merge(schema:, payslip_non_pii: v2_payload(schema, payment_date: "not a date"))
       )
-      assert_equal "not a decimal", wire.dig("payslip_non_pii", "gross", "value")
+      assert_equal "not a date", wire.dig("payslip_non_pii", "payment_date")
+    end
+  end
+
+  def test_v2_numbers_must_be_plain_decimal_strings_before_transport
+    %w[au.payslip.v2 nz.payslip.v2].each do |schema|
+      ["", "1e3", "+1", "1,234.56", "$1.00", "(1.00)", "1.", ".5", "1.5\n", "\n1.5", "١", 1234, 12.5,
+        BigDecimal("1.5"), nil, {value: "1.50"}, {employee_name: "Jane"}, ["1"]].each do |gross|
+        error = assert_raises(ArgumentError, "#{schema} #{gross.inspect}") do
+          Verifiabl::Issuer::Serialization.registration_to_wire(
+            **VALID.merge(schema:, payslip_non_pii: v2_payload(schema, gross:))
+          )
+        end
+        assert_equal "payslip_non_pii.gross must be a plain decimal String, for example \"1234.56\"", error.message
+      end
+
+      error = assert_raises(ArgumentError) do
+        Verifiabl::Issuer::Serialization.registration_to_wire(
+          **VALID.merge(schema:, payslip_non_pii: v2_payload(schema, earnings: [{type: "ordinary", amount: "SECRET"}]))
+        )
+      end
+      assert_equal "payslip_non_pii.earnings[0].amount must be a plain decimal String, for example \"1234.56\"", error.message
     end
   end
 
@@ -93,9 +113,9 @@ class ValidationTest < Minitest::Test
   end
 
   def v2_payload(schema, extras = {})
-    {:period_end => "2026-06-15", :payment_date => "2026-06-15",
-     :gross => {value: "100"}, :net => {value: "80"},
-     ((schema == "au.payslip.v2") ? :paygw : :paye) => {value: "20"}}.merge(extras)
+    {:period_end => "2026-06-15", :payment_date => "2026-06-15", :currency => "AUD",
+     :gross => "100", :net => "80",
+     ((schema == "au.payslip.v2") ? :paygw : :paye) => "20"}.merge(extras)
   end
 
   def test_period_start_is_optional_only_for_v2_schemas
@@ -113,31 +133,43 @@ class ValidationTest < Minitest::Test
     end
   end
 
-  def test_preserves_exact_v2_value_scale_on_the_wire
-    wire = Verifiabl::Issuer::Serialization.registration_to_wire(
-      **VALID.merge(
-        schema: Verifiabl::Issuer::AUSTRALIAN_PAYSLIP_V2_SCHEMA,
-        payslip_non_pii: v2_payload("au.payslip.v2", gross: Verifiabl::Issuer.payslip_number("1.50"))
+  def test_sends_v2_decimal_strings_exactly_as_given
+    ["1.50", "1.5", "-0.00", "47.3684", "-76", "0.10000000000000000000000000000001"].each do |gross|
+      wire = Verifiabl::Issuer::Serialization.registration_to_wire(
+        **VALID.merge(
+          schema: Verifiabl::Issuer::AUSTRALIAN_PAYSLIP_V2_SCHEMA,
+          payslip_non_pii: v2_payload("au.payslip.v2", gross:, hourly: {ordinary_rate: "47.3684", hours: "-1.5", amount: gross})
+        )
       )
-    )
 
-    assert_equal "1.50", wire.dig("payslip_non_pii", "gross", "value")
+      assert_equal gross, wire.dig("payslip_non_pii", "gross")
+      assert_equal({"ordinary_rate" => "47.3684", "hours" => "-1.5", "amount" => gross}, wire.dig("payslip_non_pii", "hourly"))
+    end
   end
 
-  def test_enforces_the_v2_currency_allow_list_before_transport
+  def test_requires_a_supported_v2_currency_before_transport
     %w[au.payslip.v2 nz.payslip.v2].each do |schema|
-      ["JPY", "aud", nil, :AUD].each do |currency|
-        assert_raises(ArgumentError, "#{schema} #{currency.inspect}") do
+      ["XYZ", "aud", "", nil, :AUD, "XTS", "XXX", "XAU", "CLF"].each do |currency|
+        error = assert_raises(ArgumentError, "#{schema} #{currency.inspect}") do
           Verifiabl::Issuer::Serialization.registration_to_wire(
             **VALID.merge(schema:, payslip_non_pii: v2_payload(schema, currency:))
           )
         end
+        assert_equal "currency is required and must be a supported ISO 4217 currency code, for example AUD", error.message
       end
 
-      wire = Verifiabl::Issuer::Serialization.registration_to_wire(
-        **VALID.merge(schema:, payslip_non_pii: v2_payload(schema, currency: "NZD"))
-      )
-      assert_equal "NZD", wire.dig("payslip_non_pii", "currency")
+      assert_raises(ArgumentError) do
+        Verifiabl::Issuer::Serialization.registration_to_wire(
+          **VALID.merge(schema:, payslip_non_pii: v2_payload(schema).except(:currency))
+        )
+      end
+
+      %w[NZD JPY XAF XOF XCD XPF ZWG].each do |currency|
+        wire = Verifiabl::Issuer::Serialization.registration_to_wire(
+          **VALID.merge(schema:, payslip_non_pii: v2_payload(schema, currency:))
+        )
+        assert_equal currency, wire.dig("payslip_non_pii", "currency")
+      end
     end
   end
 

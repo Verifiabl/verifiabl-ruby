@@ -43,7 +43,6 @@ module Verifiabl
     def self.format_pii: (Hash[Symbol | String, String?]) -> String
     def self.format_australian_pii: (australian_pii_fields) -> String
     def self.format_new_zealand_pii: (new_zealand_pii_fields) -> String
-    def self.payslip_number: (String | Integer | Float | BigDecimal, ?display: String?) -> Hash[Symbol, String]
     def self.encrypt_pii: (String, binary) -> Crypto::EncryptedPii
     def self.generate_verifiabl_reference: () -> String
     def self.build_barcode_payload: (verifiabl_reference: String, encrypted_pii: binary) -> String

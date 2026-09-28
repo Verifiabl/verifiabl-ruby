@@ -32,10 +32,6 @@ module Verifiabl
         Pii.format_new_zealand(fields)
       end
 
-      def payslip_number(value, display: nil)
-        PayslipV2.number(value, display:)
-      end
-
       def encrypt_pii(plaintext, key)
         Crypto.encrypt(plaintext, key)
       end

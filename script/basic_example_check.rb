@@ -63,9 +63,9 @@ Dir.mktmpdir("verifiabl-basic-example-") do |directory|
       "period_end" => "2026-08-31",
       "payment_date" => "2026-09-04",
       "currency" => currency,
-      "gross" => {"value" => gross},
-      tax_field => {"value" => tax},
-      "net" => {"value" => (currency == "AUD") ? "6750.00" : "5890.00"}
+      "gross" => gross,
+      tax_field => tax,
+      "net" => (currency == "AUD") ? "6750.00" : "5890.00"
     }
     abort "Unexpected #{schema} wire fields: #{wire.keys}" unless wire == expected
   RUBY

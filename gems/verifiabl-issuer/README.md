@@ -9,7 +9,7 @@ client, RBS signatures, and packed-gem consumer qualification.
 The current release is a release candidate. Add its exact version to your bundle:
 
 ```ruby
-gem "verifiabl-issuer", "0.1.0-rc.3"
+gem "verifiabl-issuer", "0.1.0-rc.4"
 ```
 
 Then run `bundle install`. Keep the exact version until a stable release is available.
@@ -114,9 +114,9 @@ registration = issuer.register_non_pii(
     period_end: "2026-05-31",
     payment_date: "2026-06-04",
     currency: "AUD",
-    gross: Verifiabl::Issuer.payslip_number("8125.00", display: "$8,125.00"),
-    paygw: Verifiabl::Issuer.payslip_number("2030.00", display: "$2,030.00"),
-    net: Verifiabl::Issuer.payslip_number("6095.00", display: "$6,095.00")
+    gross: "8125.00",
+    paygw: "2030.00",
+    net: "6095.00"
   },
   encryption_metadata: encrypted.encryption_metadata
 )
@@ -139,13 +139,15 @@ schema. The verifier checks the PII marker against the record's jurisdiction, no
 version; a jurisdiction mismatch fails verification. Legacy v1 verification returns this plaintext
 without parsing it.
 
-`payslip_number` accepts an `Integer`, `Float`, `BigDecimal` or exact decimal string and produces the
-required `{ value, display? }` object. It never writes an exponent. A `Float` or `BigDecimal` does
-not keep trailing zeros, so `BigDecimal("8125.00")` sends `"8125.0"`. Use a string when scale must
-remain exact. `period_start` and currency are optional for AU2 and NZ2. When currency is supplied,
-it must be AUD, NZD, USD, GBP, EUR, CAD, SGD, HKD, CHF or ZAR. The SDK already checks this
-currency list before sending. It also rejects unlisted fields (including nested fields) before
-transport to avoid sending accidental PII; the API validates the remaining payslip rules.
+Every AU2 and NZ2 amount, rate and quantity is a plain decimal `String`, for example `"1234.56"`,
+`"-25.00"` or `"47.3684"`: an optional leading `-`, digits, and an optional `.` followed by digits.
+The SDK sends the string exactly as given, so `"1.50"` and `"1.5"` stay distinct. It rejects any
+other value, including an `Integer`, `Float` or `BigDecimal`, before sending. `period_start` is
+optional for AU2 and NZ2. `currency` is required and must be a current ISO 4217 currency code
+(`Verifiabl::Issuer::SUPPORTED_V2_CURRENCIES`). Fund codes and codes with no minor unit, for example
+`XAU` or `XXX`, are not accepted, because wages are paid in legal tender. The SDK also rejects unlisted fields (including
+nested fields) before transport to avoid sending accidental PII; the API validates the remaining
+payslip rules.
 
 ### Self-managed barcode flow
 
@@ -178,9 +180,9 @@ PAYSLIP = {
     period_end: "2026-08-31",
     payment_date: "2026-09-04",
     currency: "AUD",
-    gross: Verifiabl::Issuer.payslip_number("9000.00"),
-    paygw: Verifiabl::Issuer.payslip_number("2250.00"),
-    net: Verifiabl::Issuer.payslip_number("6750.00")
+    gross: "9000.00",
+    paygw: "2250.00",
+    net: "6750.00"
   }
 }.freeze
 
@@ -256,9 +258,9 @@ PAYSLIP = {
     period_end: "2026-08-31",
     payment_date: "2026-09-04",
     currency: "NZD",
-    gross: Verifiabl::Issuer.payslip_number("7600.00"),
-    paye: Verifiabl::Issuer.payslip_number("1710.00"),
-    net: Verifiabl::Issuer.payslip_number("5890.00")
+    gross: "7600.00",
+    paye: "1710.00",
+    net: "5890.00"
   }
 }.freeze
 

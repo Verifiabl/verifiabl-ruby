@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require "bigdecimal"
 require "json"
 require "openssl"
 require_relative "test_helper"
@@ -142,28 +141,20 @@ class ProtocolTest < Minitest::Test
     assert_raises(RangeError) { Verifiabl::Issuer.format_australian_pii(employee_name: "a" * 1014) }
   end
 
-  def test_publishes_v2_profile_metadata_and_number_helpers
+  def test_publishes_v2_profile_metadata_and_currency_list
     assert_equal "io.verifiabl.au2-pii-text.v1", Verifiabl::Issuer::Pii::AUSTRALIAN_PROFILE_ID
     assert_equal "io.verifiabl.nz2-pii-text.v1", Verifiabl::Issuer::Pii::NEW_ZEALAND_PROFILE_ID
     assert_equal "au.payslip.v2", Verifiabl::Issuer::AUSTRALIAN_PAYSLIP_V2_SCHEMA
     assert_equal "nz.payslip.v2", Verifiabl::Issuer::NEW_ZEALAND_PAYSLIP_V2_SCHEMA
-    assert_equal %w[AUD NZD USD GBP EUR CAD SGD HKD CHF ZAR], Verifiabl::Issuer::SUPPORTED_V2_CURRENCIES
-    assert_equal({value: "1.50", display: "$1.50"}, Verifiabl::Issuer.payslip_number("1.50", display: "$1.50"))
-    assert_equal({value: "47"}, Verifiabl::Issuer.payslip_number(47))
-    assert_raises(ArgumentError) { Verifiabl::Issuer.payslip_number("1e3") }
-    assert_equal({value: "1.5"}, Verifiabl::Issuer.payslip_number(1.5))
-  end
-
-  def test_payslip_number_writes_big_decimal_and_float_without_an_exponent
-    assert_equal({value: "8125.0"}, Verifiabl::Issuer.payslip_number(BigDecimal("8125.00")))
-    assert_equal({value: "-12.5"}, Verifiabl::Issuer.payslip_number(BigDecimal("-12.5")))
-    assert_equal({value: "0.0425"}, Verifiabl::Issuer.payslip_number(BigDecimal("0.0425")))
-    assert_equal({value: "0.00001"}, Verifiabl::Issuer.payslip_number(0.00001))
-    assert_equal({value: "10000000000000000"}, Verifiabl::Issuer.payslip_number(1e16))
-    assert_equal({value: "-0.00000012345"}, Verifiabl::Issuer.payslip_number(-1.2345e-7))
-    assert_raises(ArgumentError) { Verifiabl::Issuer.payslip_number(BigDecimal("NaN")) }
-    assert_raises(ArgumentError) { Verifiabl::Issuer.payslip_number(Float::INFINITY) }
-    assert_raises(ArgumentError) { Verifiabl::Issuer.payslip_number(Rational(3, 2)) }
+    currencies = Verifiabl::Issuer::SUPPORTED_V2_CURRENCIES
+    assert_equal 155, currencies.length
+    assert_empty currencies & %w[XTS XXX XAU CLF]
+    assert_empty %w[XAF XOF XCD XPF JPY] - currencies
+    assert_equal currencies.sort, currencies
+    assert_equal currencies.uniq, currencies
+    assert currencies.all? { |code| code.match?(/\A[A-Z]{3}\z/) }
+    assert currencies.frozen?
+    refute Verifiabl::Issuer.respond_to?(:payslip_number)
   end
 
   def test_matches_every_au2_and_nz2_conformance_vector
