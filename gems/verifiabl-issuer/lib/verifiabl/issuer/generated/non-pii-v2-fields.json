@@ -4,76 +4,31 @@
     "period_end": null,
     "payment_date": null,
     "currency": null,
-    "gross": {
-      "value": null,
-      "display": null
-    },
-    "paygw": {
-      "value": null,
-      "display": null
-    },
-    "net": {
-      "value": null,
-      "display": null
-    },
-    "ytd_gross": {
-      "value": null,
-      "display": null
-    },
-    "ytd_paygw": {
-      "value": null,
-      "display": null
-    },
+    "gross": "decimal",
+    "paygw": "decimal",
+    "net": "decimal",
+    "ytd_gross": "decimal",
+    "ytd_paygw": "decimal",
     "pay_frequency": null,
     "employment_basis": null,
     "engagement_type": null,
     "award": null,
     "hourly": {
-      "ordinary_rate": {
-        "value": null,
-        "display": null
-      },
-      "hours": {
-        "value": null,
-        "display": null
-      },
-      "amount": {
-        "value": null,
-        "display": null
-      }
+      "ordinary_rate": "decimal",
+      "hours": "decimal",
+      "amount": "decimal"
     },
-    "annual_rate": {
-      "value": null,
-      "display": null
-    },
-    "taxable_gross": {
-      "value": null,
-      "display": null
-    },
-    "stsl_withholding": {
-      "value": null,
-      "display": null
-    },
+    "annual_rate": "decimal",
+    "taxable_gross": "decimal",
+    "stsl_withholding": "decimal",
     "earnings": [
       {
         "type": null,
         "leave_type": null,
-        "amount": {
-          "value": null,
-          "display": null
-        },
-        "units": {
-          "value": null,
-          "display": null
-        },
-        "rate": {
-          "value": null,
-          "display": null
-        },
-        "ytd_amount": {
-          "value": null,
-          "display": null
-        },
+        "amount": "decimal",
+        "units": "decimal",
+        "rate": "decimal",
+        "ytd_amount": "decimal",
         "allowance_type": null,
         "other_category": null
       }
@@ -81,72 +36,33 @@
     "salary_sacrifice": [
       {
         "type": null,
-        "amount": {
-          "value": null,
-          "display": null
-        },
-        "ytd_amount": {
-          "value": null,
-          "display": null
-        }
+        "amount": "decimal",
+        "ytd_amount": "decimal"
       }
     ],
     "deductions": [
       {
         "type": null,
-        "amount": {
-          "value": null,
-          "display": null
-        },
-        "ytd_amount": {
-          "value": null,
-          "display": null
-        }
+        "amount": "decimal",
+        "ytd_amount": "decimal"
       }
     ],
     "superannuation": [
       {
         "contribution_type": null,
-        "amount": {
-          "value": null,
-          "display": null
-        },
-        "rate": {
-          "value": null,
-          "display": null
-        },
-        "ytd_amount": {
-          "value": null,
-          "display": null
-        },
+        "amount": "decimal",
+        "rate": "decimal",
+        "ytd_amount": "decimal",
         "usi": null
       }
     ],
-    "reimbursements": {
-      "value": null,
-      "display": null
-    },
+    "reimbursements": "decimal",
     "ytd": {
-      "taxable": {
-        "value": null,
-        "display": null
-      },
-      "super": {
-        "value": null,
-        "display": null
-      },
-      "non_taxable": {
-        "value": null,
-        "display": null
-      },
-      "post_tax_deductions": {
-        "value": null,
-        "display": null
-      },
-      "reimbursements": {
-        "value": null,
-        "display": null
-      }
+      "taxable": "decimal",
+      "super": "decimal",
+      "non_taxable": "decimal",
+      "post_tax_deductions": "decimal",
+      "reimbursements": "decimal"
     }
   },
   "nz.payslip.v2": {
@@ -154,209 +70,83 @@
     "period_end": null,
     "payment_date": null,
     "currency": null,
-    "gross": {
-      "value": null,
-      "display": null
-    },
-    "paye": {
-      "value": null,
-      "display": null
-    },
-    "net": {
-      "value": null,
-      "display": null
-    },
-    "ytd_gross": {
-      "value": null,
-      "display": null
-    },
-    "ytd_paye": {
-      "value": null,
-      "display": null
-    },
+    "gross": "decimal",
+    "paye": "decimal",
+    "net": "decimal",
+    "ytd_gross": "decimal",
+    "ytd_paye": "decimal",
     "pay_cycle": null,
     "tax_code": null,
     "employment_type": null,
-    "hours_paid": {
-      "value": null,
-      "display": null
-    },
+    "hours_paid": "decimal",
     "hourly": {
-      "ordinary_rate": {
-        "value": null,
-        "display": null
-      },
-      "hours": {
-        "value": null,
-        "display": null
-      },
-      "amount": {
-        "value": null,
-        "display": null
-      }
+      "ordinary_rate": "decimal",
+      "hours": "decimal",
+      "amount": "decimal"
     },
-    "annual_rate": {
-      "value": null,
-      "display": null
-    },
-    "earnings_not_liable_for_acc": {
-      "value": null,
-      "display": null
-    },
+    "annual_rate": "decimal",
+    "earnings_not_liable_for_acc": "decimal",
     "earnings": [
       {
         "type": null,
         "leave_type": null,
-        "amount": {
-          "value": null,
-          "display": null
-        },
-        "units": {
-          "value": null,
-          "display": null
-        },
-        "rate": {
-          "value": null,
-          "display": null
-        },
-        "ytd_amount": {
-          "value": null,
-          "display": null
-        },
+        "amount": "decimal",
+        "units": "decimal",
+        "rate": "decimal",
+        "ytd_amount": "decimal",
         "allowance_type": null
       }
     ],
-    "employee_share_scheme": {
-      "value": null,
-      "display": null
-    },
-    "prior_period_gross_adjustment": {
-      "value": null,
-      "display": null
-    },
-    "prior_period_paye_adjustment": {
-      "value": null,
-      "display": null
-    },
-    "payroll_donation_tax_credit": {
-      "value": null,
-      "display": null
-    },
-    "student_loan": {
-      "value": null,
-      "display": null
-    },
-    "slcir": {
-      "value": null,
-      "display": null
-    },
-    "slbor": {
-      "value": null,
-      "display": null
-    },
-    "child_support": {
-      "value": null,
-      "display": null
-    },
-    "kiwisaver_employee_deduction": {
-      "value": null,
-      "display": null
-    },
-    "kiwisaver_employee_rate": {
-      "value": null,
-      "display": null
-    },
-    "kiwisaver_employer_contribution": {
-      "value": null,
-      "display": null
-    },
-    "esct": {
-      "value": null,
-      "display": null
-    },
+    "employee_share_scheme": "decimal",
+    "prior_period_gross_adjustment": "decimal",
+    "prior_period_paye_adjustment": "decimal",
+    "payroll_donation_tax_credit": "decimal",
+    "student_loan": "decimal",
+    "slcir": "decimal",
+    "slbor": "decimal",
+    "child_support": "decimal",
+    "kiwisaver_employee_deduction": "decimal",
+    "kiwisaver_employee_rate": "decimal",
+    "kiwisaver_employer_contribution": "decimal",
+    "esct": "decimal",
     "deductions": [
       {
         "type": null,
-        "amount": {
-          "value": null,
-          "display": null
-        },
-        "ytd_amount": {
-          "value": null,
-          "display": null
-        }
+        "amount": "decimal",
+        "ytd_amount": "decimal"
       }
     ],
-    "reimbursements": {
-      "value": null,
-      "display": null
-    },
+    "reimbursements": "decimal",
     "leave_balances": {
       "annual": {
-        "amount": {
-          "value": null,
-          "display": null
-        },
+        "amount": "decimal",
         "unit": null
       },
       "annual_accrued_this_period": {
-        "amount": {
-          "value": null,
-          "display": null
-        },
+        "amount": "decimal",
         "unit": null
       },
       "sick": {
-        "amount": {
-          "value": null,
-          "display": null
-        },
+        "amount": "decimal",
         "unit": null
       },
       "sick_accrued_this_period": {
-        "amount": {
-          "value": null,
-          "display": null
-        },
+        "amount": "decimal",
         "unit": null
       },
       "alternative": {
-        "amount": {
-          "value": null,
-          "display": null
-        },
+        "amount": "decimal",
         "unit": null
       }
     },
     "ytd": {
-      "student_loan": {
-        "value": null,
-        "display": null
-      },
-      "kiwisaver_employee": {
-        "value": null,
-        "display": null
-      },
-      "kiwisaver_employer": {
-        "value": null,
-        "display": null
-      },
-      "child_support": {
-        "value": null,
-        "display": null
-      },
-      "non_taxable": {
-        "value": null,
-        "display": null
-      },
-      "post_tax_deductions": {
-        "value": null,
-        "display": null
-      },
-      "reimbursements": {
-        "value": null,
-        "display": null
-      }
+      "student_loan": "decimal",
+      "kiwisaver_employee": "decimal",
+      "kiwisaver_employer": "decimal",
+      "child_support": "decimal",
+      "non_taxable": "decimal",
+      "post_tax_deductions": "decimal",
+      "reimbursements": "decimal"
     }
   }
 }

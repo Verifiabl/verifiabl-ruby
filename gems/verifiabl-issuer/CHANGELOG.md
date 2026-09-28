@@ -4,6 +4,19 @@ All notable changes to the Verifiabl Ruby SDK will be documented in this file.
 
 ## Unreleased
 
+## [0.1.0-rc.4] - 2026-09-28
+
+- **Breaking:** AU2 and NZ2 amounts, rates and quantities are now plain decimal Strings, for
+  example `gross: "1234.56"`, instead of `{value:, display:}` hashes. `display` is removed. The SDK
+  rejects any other value, including an `Integer`, `Float` or `BigDecimal`, before transport and sends
+  each String exactly as given.
+- **Breaking:** remove `Verifiabl::Issuer.payslip_number`.
+- **Breaking:** `currency` is required for `au.payslip.v2` and `nz.payslip.v2`, and
+  `SUPPORTED_V2_CURRENCIES` now lists the 155 current ISO 4217 currency codes instead of ten codes.
+  Fund codes and codes with no minor unit (for example `XAU`, `XTS`, `XXX`) are excluded, because
+  wages are paid in legal tender.
+  v1 schemas are unchanged.
+
 ## [0.1.0-rc.3] - 2026-09-28
 
 - Reject unlisted AU/NZ v2 non-PII fields (including nested fields) before transport;

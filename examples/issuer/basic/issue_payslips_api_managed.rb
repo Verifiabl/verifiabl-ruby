@@ -21,9 +21,9 @@ PAYSLIP = {
     period_end: "2026-08-31",
     payment_date: "2026-09-04",
     currency: "NZD",
-    gross: Verifiabl::Issuer.payslip_number("7600.00"),
-    paye: Verifiabl::Issuer.payslip_number("1710.00"),
-    net: Verifiabl::Issuer.payslip_number("5890.00")
+    gross: "7600.00",
+    paye: "1710.00",
+    net: "5890.00"
   }
 }.freeze
 

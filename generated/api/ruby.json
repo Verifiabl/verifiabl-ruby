@@ -127,17 +127,6 @@
           }
         },
         {
-          "path": "Verifiabl::Issuer.payslip_number",
-          "name": "payslip_number",
-          "kind": "method",
-          "scope": "singleton",
-          "signature": "def self.payslip_number: (String | Integer | Float | BigDecimal, ?display: String?) -> Hash[Symbol, String]",
-          "documentation": {
-            "summary": "",
-            "tags": []
-          }
-        },
-        {
           "path": "Verifiabl::Issuer::AUSTRALIAN_PAYSLIP_V2_SCHEMA",
           "name": "AUSTRALIAN_PAYSLIP_V2_SCHEMA",
           "kind": "constant",
