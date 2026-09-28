@@ -13,11 +13,13 @@ module Verifiabl
       module_function
 
       def registration!(schema:, issued_at:, payslip_non_pii:, encryption_metadata:)
+        registration_envelope!(schema:, issued_at:, encryption_metadata:)
+        validate_payslip_non_pii!(schema, payslip_non_pii)
+      end
+
+      def registration_envelope!(schema:, issued_at:, encryption_metadata:)
         raise ArgumentError, "schema must be in format 'xx.type.vN'" unless schema.is_a?(String) && SCHEMA_PATTERN.match?(schema)
         validate_issued_at!(issued_at)
-        raise ArgumentError, "payslip_non_pii must be a Hash" unless payslip_non_pii.is_a?(Hash)
-        validate_iso_date!(value(payslip_non_pii, :period_start), "period_start") if key?(payslip_non_pii, :period_start)
-        validate_iso_date!(value(payslip_non_pii, :period_end), "period_end") if key?(payslip_non_pii, :period_end)
         validate_encryption_metadata!(encryption_metadata)
       end
 
@@ -52,6 +54,25 @@ module Verifiabl
         raise ArgumentError, "encryption_metadata.tag must be a 16-byte binary string (128-bit GCM tag)" unless valid_tag
       end
       private_class_method :validate_encryption_metadata!
+
+      def validate_payslip_non_pii!(schema, payslip_non_pii)
+        raise ArgumentError, "payslip_non_pii must be a Hash" unless payslip_non_pii.is_a?(Hash)
+        if %w[au.payslip.v1 nz.payslip.v1].include?(schema) && !key?(payslip_non_pii, :period_start)
+          raise ArgumentError, "period_start is required for #{schema}"
+        end
+        validate_iso_date!(value(payslip_non_pii, :period_start), "period_start") if key?(payslip_non_pii, :period_start)
+        validate_iso_date!(value(payslip_non_pii, :period_end), "period_end") if key?(payslip_non_pii, :period_end)
+        validate_v2_currency!(payslip_non_pii) if [AUSTRALIAN_PAYSLIP_V2_SCHEMA, NEW_ZEALAND_PAYSLIP_V2_SCHEMA].include?(schema)
+      end
+      private_class_method :validate_payslip_non_pii!
+
+      def validate_v2_currency!(payslip_non_pii)
+        return unless key?(payslip_non_pii, :currency)
+        return if SUPPORTED_V2_CURRENCIES.include?(value(payslip_non_pii, :currency))
+
+        raise ArgumentError, "currency must be one of #{SUPPORTED_V2_CURRENCIES.join(", ")}"
+      end
+      private_class_method :validate_v2_currency!
 
       def validate_issued_at!(issued_at)
         return if issued_at.is_a?(Time)

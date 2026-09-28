@@ -1,15 +1,17 @@
 # Basic issuer examples
 
-These examples demonstrate the two alternative barcode flows with the same fictional `PAYSLIP`
-fixture. Both format and encrypt PII locally and register only the non-PII fields as payslip data.
-They support Ruby 3.3 and newer.
+These examples demonstrate the two alternative barcode flows: self-managed with a fictional
+Australian v2 payslip (AU2), and API-managed with a fictional New Zealand v2 payslip (NZ2).
+Each pairs its jurisdictional PII formatter with the matching non-PII schema and uses labelled
+non-PII fields and exact decimal payslip numbers. Both format and encrypt PII locally and
+register only the non-PII fields as payslip data. They support Ruby 3.3 and newer.
 
 ## Setup
 
 Install the release candidate from RubyGems:
 
 ```sh
-gem install verifiabl-issuer --version 0.1.0-rc.2
+gem install verifiabl-issuer --version 0.1.0-rc.3
 cd examples/issuer/basic
 bundle install
 ```
@@ -34,14 +36,14 @@ export VERIFIABL_CLIENT_SECRET='your-sandbox-client-secret'
 export VERIFIABL_ENCRYPTION_KEY_BASE64='your-base64-encoded-provider-key'
 ```
 
-Run the self-managed flow to register the payslip and render its SVG locally:
+Run the self-managed AU2 flow to register the payslip and render its SVG locally:
 
 ```sh
 ruby issue_payslips_self_managed.rb
 ```
 
-Alternatively, run the API-managed flow to register the payslip and download the PNG rendered by
-Verifiabl:
+Alternatively, run the API-managed NZ2 flow to register the payslip and download the PNG rendered
+by Verifiabl:
 
 ```sh
 ruby issue_payslips_api_managed.rb

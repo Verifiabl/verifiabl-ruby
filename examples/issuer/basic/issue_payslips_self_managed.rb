@@ -11,22 +11,20 @@ PAYSLIP = {
     employee_name: "Jane A. Doe",
     position: "Senior Developer",
     department: "Engineering",
-    employer_abn: "12345678901",
+    employer_name: "Example Payroll Pty Ltd",
+    employer_abn: "12 345 678 901",
     bsb: "062-000",
-    account_number: "12345678",
+    account_number: "****5678",
     account_name: "Jane A Doe",
-    address: "12 Example St, Sydney NSW 2000"
+    address: {lines: ["12 Example St"], suburb: "Sydney", state_or_territory: "NSW", postcode: "2000"}
   },
   non_pii: {
-    period_start: "2026-08-01",
     period_end: "2026-08-31",
     payment_date: "2026-09-04",
     currency: "AUD",
-    gross_cents: 900_000,
-    paygw_cents: 225_000,
-    net_cents: 675_000,
-    ytd_gross_cents: 5_400_000,
-    ytd_paygw_cents: 1_350_000
+    gross: Verifiabl::Issuer.payslip_number("9000.00"),
+    paygw: Verifiabl::Issuer.payslip_number("2250.00"),
+    net: Verifiabl::Issuer.payslip_number("6750.00")
   }
 }.freeze
 
@@ -41,12 +39,12 @@ issuer = Verifiabl::Issuer::Client.new(
 provider_encryption_key = Base64.strict_decode64(
   ENV.fetch("VERIFIABL_ENCRYPTION_KEY_BASE64")
 )
-plaintext = Verifiabl::Issuer.format_pii(PAYSLIP.fetch(:pii))
+plaintext = Verifiabl::Issuer.format_australian_pii(PAYSLIP.fetch(:pii))
 
 encrypted = Verifiabl::Issuer.encrypt_pii(plaintext, provider_encryption_key)
 
 registration = {
-  schema: "au.payslip.v1",
+  schema: Verifiabl::Issuer::AUSTRALIAN_PAYSLIP_V2_SCHEMA,
   issued_at: Time.now.utc,
   payslip_non_pii: PAYSLIP.fetch(:non_pii),
   encryption_metadata: encrypted.encryption_metadata

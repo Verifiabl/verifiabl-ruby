@@ -11,10 +11,12 @@ module Verifiabl
 
       def registration_to_wire(schema:, issued_at:, payslip_non_pii:, encryption_metadata:)
         Validation.registration!(schema: schema, issued_at: issued_at, payslip_non_pii: payslip_non_pii, encryption_metadata: encryption_metadata)
+        wire_payslip = stringify_keys(payslip_non_pii)
+        NonPiiV2.validate!(schema, wire_payslip) if [AUSTRALIAN_PAYSLIP_V2_SCHEMA, NEW_ZEALAND_PAYSLIP_V2_SCHEMA].include?(schema)
         {
           "schema" => schema,
           "issued_at" => serialize_time(issued_at),
-          "payslip_non_pii" => stringify_keys(payslip_non_pii),
+          "payslip_non_pii" => wire_payslip,
           "encryption_metadata" => encryption_metadata_to_wire(encryption_metadata)
         }
       end
@@ -29,6 +31,37 @@ module Verifiabl
 
         {"records" => records.each_with_index.map { |record, index| batch_record_to_wire(record, index) }}
       end
+
+      # Validate the request envelope first, then omit invalid payslips so one
+      # record cannot discard an otherwise valid pay run.
+      def prepare_batch(records:)
+        raise ArgumentError, "records must contain between 1 and 1000 records" unless records.is_a?(Array) && records.length.between?(1, 1000)
+
+        sent = []
+        indices = []
+        errors = {}
+        records.each_with_index do |record, index|
+          batch_envelope_schema!(record, index)
+          begin
+            sent << batch_record_to_wire(record, index)
+            indices << index
+          rescue ArgumentError => error
+            errors[index] = error.message
+          end
+        end
+        [{"records" => sent}, indices, errors]
+      end
+
+      def batch_envelope_schema!(record, index)
+        raise ArgumentError, "records[#{index}] must be a Hash" unless record.is_a?(Hash)
+
+        Validation.reference!(fetch(record, :verifiabl_reference))
+        schema = fetch(record, :schema)
+        Validation.registration_envelope!(schema:, issued_at: fetch(record, :issued_at), encryption_metadata: fetch(record, :encryption_metadata))
+        Validation.external_id!(fetch(record, :external_id)) if record.key?(:external_id) || record.key?("external_id")
+        schema
+      end
+      private_class_method :batch_envelope_schema!
 
       def batch_record_to_wire(record, index)
         raise ArgumentError, "records[#{index}] must be a Hash" unless record.is_a?(Hash)

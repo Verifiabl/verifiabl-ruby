@@ -1,0 +1,362 @@
+{
+  "au.payslip.v2": {
+    "period_start": null,
+    "period_end": null,
+    "payment_date": null,
+    "currency": null,
+    "gross": {
+      "value": null,
+      "display": null
+    },
+    "paygw": {
+      "value": null,
+      "display": null
+    },
+    "net": {
+      "value": null,
+      "display": null
+    },
+    "ytd_gross": {
+      "value": null,
+      "display": null
+    },
+    "ytd_paygw": {
+      "value": null,
+      "display": null
+    },
+    "pay_frequency": null,
+    "employment_basis": null,
+    "engagement_type": null,
+    "award": null,
+    "hourly": {
+      "ordinary_rate": {
+        "value": null,
+        "display": null
+      },
+      "hours": {
+        "value": null,
+        "display": null
+      },
+      "amount": {
+        "value": null,
+        "display": null
+      }
+    },
+    "annual_rate": {
+      "value": null,
+      "display": null
+    },
+    "taxable_gross": {
+      "value": null,
+      "display": null
+    },
+    "stsl_withholding": {
+      "value": null,
+      "display": null
+    },
+    "earnings": [
+      {
+        "type": null,
+        "leave_type": null,
+        "amount": {
+          "value": null,
+          "display": null
+        },
+        "units": {
+          "value": null,
+          "display": null
+        },
+        "rate": {
+          "value": null,
+          "display": null
+        },
+        "ytd_amount": {
+          "value": null,
+          "display": null
+        },
+        "allowance_type": null,
+        "other_category": null
+      }
+    ],
+    "salary_sacrifice": [
+      {
+        "type": null,
+        "amount": {
+          "value": null,
+          "display": null
+        },
+        "ytd_amount": {
+          "value": null,
+          "display": null
+        }
+      }
+    ],
+    "deductions": [
+      {
+        "type": null,
+        "amount": {
+          "value": null,
+          "display": null
+        },
+        "ytd_amount": {
+          "value": null,
+          "display": null
+        }
+      }
+    ],
+    "superannuation": [
+      {
+        "contribution_type": null,
+        "amount": {
+          "value": null,
+          "display": null
+        },
+        "rate": {
+          "value": null,
+          "display": null
+        },
+        "ytd_amount": {
+          "value": null,
+          "display": null
+        },
+        "usi": null
+      }
+    ],
+    "reimbursements": {
+      "value": null,
+      "display": null
+    },
+    "ytd": {
+      "taxable": {
+        "value": null,
+        "display": null
+      },
+      "super": {
+        "value": null,
+        "display": null
+      },
+      "non_taxable": {
+        "value": null,
+        "display": null
+      },
+      "post_tax_deductions": {
+        "value": null,
+        "display": null
+      },
+      "reimbursements": {
+        "value": null,
+        "display": null
+      }
+    }
+  },
+  "nz.payslip.v2": {
+    "period_start": null,
+    "period_end": null,
+    "payment_date": null,
+    "currency": null,
+    "gross": {
+      "value": null,
+      "display": null
+    },
+    "paye": {
+      "value": null,
+      "display": null
+    },
+    "net": {
+      "value": null,
+      "display": null
+    },
+    "ytd_gross": {
+      "value": null,
+      "display": null
+    },
+    "ytd_paye": {
+      "value": null,
+      "display": null
+    },
+    "pay_cycle": null,
+    "tax_code": null,
+    "employment_type": null,
+    "hours_paid": {
+      "value": null,
+      "display": null
+    },
+    "hourly": {
+      "ordinary_rate": {
+        "value": null,
+        "display": null
+      },
+      "hours": {
+        "value": null,
+        "display": null
+      },
+      "amount": {
+        "value": null,
+        "display": null
+      }
+    },
+    "annual_rate": {
+      "value": null,
+      "display": null
+    },
+    "earnings_not_liable_for_acc": {
+      "value": null,
+      "display": null
+    },
+    "earnings": [
+      {
+        "type": null,
+        "leave_type": null,
+        "amount": {
+          "value": null,
+          "display": null
+        },
+        "units": {
+          "value": null,
+          "display": null
+        },
+        "rate": {
+          "value": null,
+          "display": null
+        },
+        "ytd_amount": {
+          "value": null,
+          "display": null
+        },
+        "allowance_type": null
+      }
+    ],
+    "employee_share_scheme": {
+      "value": null,
+      "display": null
+    },
+    "prior_period_gross_adjustment": {
+      "value": null,
+      "display": null
+    },
+    "prior_period_paye_adjustment": {
+      "value": null,
+      "display": null
+    },
+    "payroll_donation_tax_credit": {
+      "value": null,
+      "display": null
+    },
+    "student_loan": {
+      "value": null,
+      "display": null
+    },
+    "slcir": {
+      "value": null,
+      "display": null
+    },
+    "slbor": {
+      "value": null,
+      "display": null
+    },
+    "child_support": {
+      "value": null,
+      "display": null
+    },
+    "kiwisaver_employee_deduction": {
+      "value": null,
+      "display": null
+    },
+    "kiwisaver_employee_rate": {
+      "value": null,
+      "display": null
+    },
+    "kiwisaver_employer_contribution": {
+      "value": null,
+      "display": null
+    },
+    "esct": {
+      "value": null,
+      "display": null
+    },
+    "deductions": [
+      {
+        "type": null,
+        "amount": {
+          "value": null,
+          "display": null
+        },
+        "ytd_amount": {
+          "value": null,
+          "display": null
+        }
+      }
+    ],
+    "reimbursements": {
+      "value": null,
+      "display": null
+    },
+    "leave_balances": {
+      "annual": {
+        "amount": {
+          "value": null,
+          "display": null
+        },
+        "unit": null
+      },
+      "annual_accrued_this_period": {
+        "amount": {
+          "value": null,
+          "display": null
+        },
+        "unit": null
+      },
+      "sick": {
+        "amount": {
+          "value": null,
+          "display": null
+        },
+        "unit": null
+      },
+      "sick_accrued_this_period": {
+        "amount": {
+          "value": null,
+          "display": null
+        },
+        "unit": null
+      },
+      "alternative": {
+        "amount": {
+          "value": null,
+          "display": null
+        },
+        "unit": null
+      }
+    },
+    "ytd": {
+      "student_loan": {
+        "value": null,
+        "display": null
+      },
+      "kiwisaver_employee": {
+        "value": null,
+        "display": null
+      },
+      "kiwisaver_employer": {
+        "value": null,
+        "display": null
+      },
+      "child_support": {
+        "value": null,
+        "display": null
+      },
+      "non_taxable": {
+        "value": null,
+        "display": null
+      },
+      "post_tax_deductions": {
+        "value": null,
+        "display": null
+      },
+      "reimbursements": {
+        "value": null,
+        "display": null
+      }
+    }
+  }
+}

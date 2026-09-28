@@ -14,6 +14,7 @@ module Verifiabl
       MODES = %i[byte_8bit alphanumeric].freeze
 
       Result = Data.define(:content, :modules, :version, :mask_pattern, :error_correction_level, :segment_modes)
+      private_constant :Result
 
       class CapacityError < ArgumentError; end
 

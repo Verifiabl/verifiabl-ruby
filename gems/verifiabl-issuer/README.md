@@ -9,7 +9,7 @@ client, RBS signatures, and packed-gem consumer qualification.
 The current release is a release candidate. Add its exact version to your bundle:
 
 ```ruby
-gem "verifiabl-issuer", "0.1.0-rc.2"
+gem "verifiabl-issuer", "0.1.0-rc.3"
 ```
 
 Then run `bundle install`. Keep the exact version until a stable release is available.
@@ -79,9 +79,77 @@ loopback HTTP. OAuth overrides are restricted to Verifiabl auth hosts or loopbac
 Choose one barcode flow for each payslip. Do not call both registration methods for the same
 issuance.
 
+### AU2 and NZ2 payslip profiles
+
+Use `format_australian_pii` with `au.payslip.v2`. The formatter accepts employer name and ABN
+separately, then writes the ABN when present or falls back to the name. Structured address
+components collapse into the profile's single address display field.
+
+```ruby
+require "base64"
+
+provider_encryption_key = Base64.strict_decode64(
+  ENV.fetch("VERIFIABL_ENCRYPTION_KEY_BASE64")
+)
+plaintext = Verifiabl::Issuer.format_australian_pii(
+  employee_name: "Jane A. Doe",
+  employer_name: "Example Payroll Pty Ltd",
+  employer_abn: "12 345 678 901",
+  bsb: "062-000",
+  account_number: "****5678",
+  account_name: "Jane A Doe",
+  address: {
+    lines: ["A204/11-17 Eve Street"],
+    suburb: "Erskineville",
+    state_or_territory: "NSW",
+    postcode: "2043"
+  }
+)
+encrypted = Verifiabl::Issuer.encrypt_pii(plaintext, provider_encryption_key)
+
+registration = issuer.register_non_pii(
+  schema: Verifiabl::Issuer::AUSTRALIAN_PAYSLIP_V2_SCHEMA,
+  issued_at: Time.now.utc,
+  payslip_non_pii: {
+    period_end: "2026-05-31",
+    payment_date: "2026-06-04",
+    currency: "AUD",
+    gross: Verifiabl::Issuer.payslip_number("8125.00", display: "$8,125.00"),
+    paygw: Verifiabl::Issuer.payslip_number("2030.00", display: "$2,030.00"),
+    net: Verifiabl::Issuer.payslip_number("6095.00", display: "$6,095.00")
+  },
+  encryption_metadata: encrypted.encryption_metadata
+)
+```
+
+For `nz.payslip.v2`, use `format_new_zealand_pii`. NZ2 carries the printed employee IRD number,
+employer name, account number and account name. It has no BSB or NZBN field.
+
+Both formatters always write eight positions, including empty trailing fields. AU addresses render
+as address lines followed by `suburb state postcode`; NZ addresses render as address lines, optional
+suburb, then `city postcode`. Country is implicit. The complete UTF-8 plaintext is limited to 1024
+bytes.
+
+`schema:` selects only the non-PII payload contract. Choose the PII formatter separately:
+`format_australian_pii` (AU2) for Australian records or `format_new_zealand_pii` (NZ2) for New
+Zealand records. Today the examples use AU2 with `au.payslip.v2` and NZ2 with `nz.payslip.v2`,
+but those matching `2` suffixes are not a version-coupling rule. A future non-PII schema can still
+use the same jurisdictional PII format, or the PII format can evolve without renaming the non-PII
+schema. The verifier checks the PII marker against the record's jurisdiction, not the schema
+version; a jurisdiction mismatch fails verification. Legacy v1 verification returns this plaintext
+without parsing it.
+
+`payslip_number` accepts an `Integer`, `Float`, `BigDecimal` or exact decimal string and produces the
+required `{ value, display? }` object. It never writes an exponent. A `Float` or `BigDecimal` does
+not keep trailing zeros, so `BigDecimal("8125.00")` sends `"8125.0"`. Use a string when scale must
+remain exact. `period_start` and currency are optional for AU2 and NZ2. When currency is supplied,
+it must be AUD, NZD, USD, GBP, EUR, CAD, SGD, HKD, CHF or ZAR. The SDK already checks this
+currency list before sending. It also rejects unlisted fields (including nested fields) before
+transport to avoid sending accidental PII; the API validates the remaining payslip rules.
+
 ### Self-managed barcode flow
 
-Use this flow when your application renders the barcode. The following example is generated from
+Use this flow when your application renders the barcode. This AU2 example is generated from
 the runnable
 [`examples/issuer/basic/issue_payslips_self_managed.rb`](../../examples/issuer/basic/issue_payslips_self_managed.rb)
 source.
@@ -99,22 +167,20 @@ PAYSLIP = {
     employee_name: "Jane A. Doe",
     position: "Senior Developer",
     department: "Engineering",
-    employer_abn: "12345678901",
+    employer_name: "Example Payroll Pty Ltd",
+    employer_abn: "12 345 678 901",
     bsb: "062-000",
-    account_number: "12345678",
+    account_number: "****5678",
     account_name: "Jane A Doe",
-    address: "12 Example St, Sydney NSW 2000"
+    address: {lines: ["12 Example St"], suburb: "Sydney", state_or_territory: "NSW", postcode: "2000"}
   },
   non_pii: {
-    period_start: "2026-08-01",
     period_end: "2026-08-31",
     payment_date: "2026-09-04",
     currency: "AUD",
-    gross_cents: 900_000,
-    paygw_cents: 225_000,
-    net_cents: 675_000,
-    ytd_gross_cents: 5_400_000,
-    ytd_paygw_cents: 1_350_000
+    gross: Verifiabl::Issuer.payslip_number("9000.00"),
+    paygw: Verifiabl::Issuer.payslip_number("2250.00"),
+    net: Verifiabl::Issuer.payslip_number("6750.00")
   }
 }.freeze
 
@@ -129,12 +195,12 @@ issuer = Verifiabl::Issuer::Client.new(
 provider_encryption_key = Base64.strict_decode64(
   ENV.fetch("VERIFIABL_ENCRYPTION_KEY_BASE64")
 )
-plaintext = Verifiabl::Issuer.format_pii(PAYSLIP.fetch(:pii))
+plaintext = Verifiabl::Issuer.format_australian_pii(PAYSLIP.fetch(:pii))
 
 encrypted = Verifiabl::Issuer.encrypt_pii(plaintext, provider_encryption_key)
 
 registration = {
-  schema: "au.payslip.v1",
+  schema: Verifiabl::Issuer::AUSTRALIAN_PAYSLIP_V2_SCHEMA,
   issued_at: Time.now.utc,
   payslip_non_pii: PAYSLIP.fetch(:non_pii),
   encryption_metadata: encrypted.encryption_metadata
@@ -162,7 +228,7 @@ application combines the returned reference with the encrypted PII to render the
 
 ### API-managed barcode flow
 
-Use this alternative when Verifiabl should render the barcode PNG. The following example is
+Use this alternative when Verifiabl should render the barcode PNG. This NZ2 example is
 generated from the runnable
 [`examples/issuer/basic/issue_payslips_api_managed.rb`](../../examples/issuer/basic/issue_payslips_api_managed.rb)
 source.
@@ -175,27 +241,24 @@ require "fileutils"
 require "verifiabl/issuer"
 
 PAYSLIP = {
-  external_id: "PAY-1001",
+  external_id: "PAY-1002",
   pii: {
-    employee_name: "Jane A. Doe",
-    position: "Senior Developer",
-    department: "Engineering",
-    employer_abn: "12345678901",
-    bsb: "062-000",
-    account_number: "12345678",
-    account_name: "Jane A Doe",
-    address: "12 Example St, Sydney NSW 2000"
+    employee_name: "Zoë Nguyễn",
+    ird_number: "***-***-***",
+    position: "Product Designer",
+    department: "Product",
+    employer_name: "Example Payroll NZ Ltd",
+    account_number: "**-****-*******-**",
+    account_name: "Zoë Nguyễn",
+    address: {lines: ["44 Harbour Rd"], suburb: "Parnell", city: "Auckland", postcode: "1052"}
   },
   non_pii: {
-    period_start: "2026-08-01",
     period_end: "2026-08-31",
     payment_date: "2026-09-04",
-    currency: "AUD",
-    gross_cents: 900_000,
-    paygw_cents: 225_000,
-    net_cents: 675_000,
-    ytd_gross_cents: 5_400_000,
-    ytd_paygw_cents: 1_350_000
+    currency: "NZD",
+    gross: Verifiabl::Issuer.payslip_number("7600.00"),
+    paye: Verifiabl::Issuer.payslip_number("1710.00"),
+    net: Verifiabl::Issuer.payslip_number("5890.00")
   }
 }.freeze
 
@@ -210,12 +273,12 @@ issuer = Verifiabl::Issuer::Client.new(
 provider_encryption_key = Base64.strict_decode64(
   ENV.fetch("VERIFIABL_ENCRYPTION_KEY_BASE64")
 )
-plaintext = Verifiabl::Issuer.format_pii(PAYSLIP.fetch(:pii))
+plaintext = Verifiabl::Issuer.format_new_zealand_pii(PAYSLIP.fetch(:pii))
 
 encrypted = Verifiabl::Issuer.encrypt_pii(plaintext, provider_encryption_key)
 
 registration = {
-  schema: "au.payslip.v1",
+  schema: Verifiabl::Issuer::NEW_ZEALAND_PAYSLIP_V2_SCHEMA,
   issued_at: Time.now.utc,
   payslip_non_pii: PAYSLIP.fetch(:non_pii),
   encryption_metadata: encrypted.encryption_metadata

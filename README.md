@@ -23,6 +23,24 @@ bundle exec rake
 bundle exec ruby script/packed_gem_check.rb
 ```
 
+### Generated API reference
+
+The public API reference is generated with the pinned [YARD](https://yardoc.org/) dependency. The RBS
+signature defines the supported public surface, and YARD supplies documentation from the Ruby source.
+Generate the deterministic catalogue with:
+
+```sh
+bundle exec ruby script/api_reference.rb
+```
+
+The command replaces `generated/api/ruby.json`. The catalogue is checked in so the customer docs can
+import an exact SDK revision without running Ruby or accessing this repository at build time. The
+default Rake task runs the non-mutating freshness check; it can also be run directly:
+
+```sh
+bundle exec ruby script/api_reference.rb --check
+```
+
 ## License
 
 [MIT](./LICENSE)
