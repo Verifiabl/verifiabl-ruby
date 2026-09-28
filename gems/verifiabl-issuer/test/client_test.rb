@@ -23,6 +23,40 @@ class ClientTest < Minitest::Test
     assert api_requests.all? { |request| request.fetch(:headers).fetch("authorization") == "Bearer token-1" }
   end
 
+  def test_accepts_oauth_bearer_token_type_case_insensitively
+    %w[Bearer bearer BEARER].each do |token_type|
+      authorization = nil
+      transport = lambda do |**request|
+        if request.fetch(:url).include?("/oauth/token")
+          response(200, access_token: "token", token_type: token_type, expires_in: 3600)
+        else
+          authorization = request.fetch(:headers).fetch("authorization")
+          response(200, verifiabl_reference: "AbCdEfGhIjKlMnOpQrStUv")
+        end
+      end
+
+      build_client(transport).register_non_pii(verifiabl_reference: "AbCdEfGhIjKlMnOpQrStUv", **registration)
+
+      assert_equal "Bearer token", authorization
+    end
+  end
+
+  def test_rejects_non_bearer_oauth_token_types
+    %w[Basic DPoP].each do |token_type|
+      transport = lambda do |**request|
+        if request.fetch(:url).include?("/oauth/token")
+          response(200, access_token: "token", token_type: token_type, expires_in: 3600)
+        else
+          flunk "must not send API request"
+        end
+      end
+
+      assert_raises(Verifiabl::Issuer::AuthError) do
+        build_client(transport).register_non_pii(verifiabl_reference: "AbCdEfGhIjKlMnOpQrStUv", **registration)
+      end
+    end
+  end
+
   def test_rejects_an_invalid_caller_reference_before_sending
     client = build_client(->(**_request) { flunk "must not send" })
 
@@ -233,6 +267,29 @@ class ClientTest < Minitest::Test
     assert_equal "verifiabl:issuer", token_body.fetch("scope")
   end
 
+  def test_accepts_custom_transport
+    configuration = Verifiabl::Issuer::Configuration.new
+    transport = ->(**) {}
+
+    client = Verifiabl::Issuer::Client.new(configuration, transport: transport)
+
+    assert_same transport, client.instance_variable_get(:@transport)
+  end
+
+  def test_rejects_internal_runtime_dependency_keywords
+    configuration = Verifiabl::Issuer::Configuration.new
+
+    assert_raises(ArgumentError) { Verifiabl::Issuer::Client.new(configuration, clock: -> { Time.now }) }
+  end
+
+  def test_rejects_non_callable_transport
+    configuration = Verifiabl::Issuer::Configuration.new
+
+    error = assert_raises(ArgumentError) { Verifiabl::Issuer::Client.new(configuration, transport: Object.new) }
+
+    assert_equal "transport must respond to call", error.message
+  end
+
   def test_rejects_unsafe_endpoint_overrides
     configuration = Verifiabl::Issuer::Configuration.new(token_url: "https://attacker.example/token")
     assert_raises(ArgumentError) { Verifiabl::Issuer::Client.new(configuration) }
@@ -376,6 +433,65 @@ class ClientTest < Minitest::Test
     assert_equal "pay-1", result.results.first.external_id
   end
 
+  def test_legacy_new_zealand_v1_batch_record_is_sent
+    requests = []
+    reference = "AbCdEfGhIjKlMnOpQrStUv"
+    record = registration.merge(schema: "nz.payslip.v1", verifiabl_reference: reference)
+    client = build_client(lambda do |**request|
+      requests << request
+      if request.fetch(:url).include?("/oauth/token")
+        response(200, access_token: "token", expires_in: 3600)
+      else
+        response(200, results: [{status: "created", verifiabl_reference: reference}])
+      end
+    end)
+
+    result = client.register_non_pii_batch([record])
+
+    assert_equal "nz.payslip.v1", JSON.parse(requests.last.fetch(:body)).fetch("records").first.fetch("schema")
+    assert_equal "created", result.results.first.status
+  end
+
+  def test_invalid_v2_batch_record_is_not_sent_and_keeps_result_order
+    requests = []
+    good_reference = "Xk2mP9qRsT4uVwYzAbCdEf"
+    bad = registration.merge(schema: "au.payslip.v2", verifiabl_reference: "AbCdEfGhIjKlMnOpQrStUv", external_id: "bad-1",
+      payslip_non_pii: {period_end: "2026-06-15", gross: {value: {employee_name: "Jane"}}})
+    good = registration.merge(verifiabl_reference: good_reference)
+    client = build_client(lambda do |**request|
+      requests << request
+      if request.fetch(:url).include?("/oauth/token")
+        response(200, access_token: "token", expires_in: 3600)
+      else
+        response(200, results: [{status: "created", verifiabl_reference: good_reference}])
+      end
+    end)
+
+    result = client.register_non_pii_batch([bad, good])
+
+    wire = JSON.parse(requests.last.fetch(:body))
+    assert_equal good_reference, wire.fetch("records").fetch(0).fetch("verifiabl_reference")
+    assert_equal 1, wire.fetch("records").length
+    assert_equal "VALIDATION_FAILED", result.results.fetch(0).code
+    assert_equal "bad-1", result.results.fetch(0).external_id
+    assert_equal "created", result.results.fetch(1).status
+  end
+
+  def test_all_invalid_v2_batch_records_do_not_fetch_a_token
+    calls = []
+    invalid = registration.merge(schema: "au.payslip.v2", verifiabl_reference: "AbCdEfGhIjKlMnOpQrStUv",
+      payslip_non_pii: {employee_name: "Jane"})
+    client = build_client(lambda do |**request|
+      calls << request
+      raise "unexpected network request"
+    end)
+
+    result = client.register_non_pii_batch([invalid])
+
+    assert_empty calls
+    assert_equal "VALIDATION_FAILED", result.results.fetch(0).code
+  end
+
   def test_rejects_batch_result_count_mismatch
     record = registration.merge(verifiabl_reference: "AbCdEfGhIjKlMnOpQrStUv")
     client = build_client(lambda do |**request|
@@ -450,7 +566,9 @@ class ClientTest < Minitest::Test
       environment: :sandbox,
       **options.except(*runtime_keys)
     )
-    Verifiabl::Issuer::Client.new(configuration, transport: transport, **runtime_options)
+    client = Verifiabl::Issuer::Client.new(configuration, transport: transport)
+    client.send(:configure_runtime_dependencies, transport: transport, **runtime_options) unless runtime_options.empty?
+    client
   end
 
   def response(status, body)

@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "bigdecimal"
 require "json"
 require "openssl"
 require_relative "test_helper"
@@ -82,6 +83,100 @@ class ProtocolTest < Minitest::Test
   def test_enforces_complete_p2_utf8_byte_limit
     assert_equal 1024, Verifiabl::Issuer.format_pii(employee_name: "a" * 1014).bytesize
     assert_raises(RangeError) { Verifiabl::Issuer.format_pii(employee_name: "a" * 1015) }
+  end
+
+  def test_formats_australian_pii_in_permanent_au2_order
+    plaintext = Verifiabl::Issuer.format_australian_pii(
+      employee_name: "Jo Worker",
+      position: "Analyst",
+      department: "Finance",
+      employer_name: "Acme Pty Ltd",
+      employer_abn: "12 345 678 901",
+      bsb: "062-000",
+      account_number: "****5678",
+      account_name: "J Worker",
+      address: {
+        lines: ["A204/11-17 Eve Street"],
+        suburb: "Erskineville",
+        state_or_territory: "NSW",
+        postcode: "2043"
+      }
+    )
+
+    assert_equal(
+      "AU2|Jo Worker|Analyst|Finance|12 345 678 901|062-000|****5678|J Worker|" \
+        "A204/11-17 Eve Street, Erskineville NSW 2043",
+      plaintext
+    )
+    assert_equal "AU2||||Acme Pty Ltd||||", Verifiabl::Issuer.format_australian_pii(employer_name: "Acme Pty Ltd")
+  end
+
+  def test_formats_new_zealand_pii_in_permanent_nz2_order
+    plaintext = Verifiabl::Issuer.format_new_zealand_pii(
+      employee_name: "Jo Worker",
+      ird_number: "***-***-789",
+      position: "Analyst",
+      department: "Finance",
+      employer_name: "Acme Limited",
+      account_number: "**-****-****5678-**",
+      account_name: "J Worker",
+      address: {
+        lines: ["Level 2", "10 Lambton Quay"],
+        suburb: "Wellington Central",
+        city: "Wellington",
+        postcode: "6011"
+      }
+    )
+
+    assert_equal(
+      "NZ2|Jo Worker|***-***-789|Analyst|Finance|Acme Limited|**-****-****5678-**|" \
+        "J Worker|Level 2, 10 Lambton Quay, Wellington Central, Wellington 6011",
+      plaintext
+    )
+  end
+
+  def test_au2_and_nz2_preserve_all_positions_and_share_the_payload_limit
+    assert_equal "AU2||||||||", Verifiabl::Issuer.format_australian_pii({})
+    assert_equal "NZ2||||||||", Verifiabl::Issuer.format_new_zealand_pii({})
+    assert_equal 1024, Verifiabl::Issuer.format_australian_pii(employee_name: "a" * 1013).bytesize
+    assert_raises(RangeError) { Verifiabl::Issuer.format_australian_pii(employee_name: "a" * 1014) }
+  end
+
+  def test_publishes_v2_profile_metadata_and_number_helpers
+    assert_equal "io.verifiabl.au2-pii-text.v1", Verifiabl::Issuer::Pii::AUSTRALIAN_PROFILE_ID
+    assert_equal "io.verifiabl.nz2-pii-text.v1", Verifiabl::Issuer::Pii::NEW_ZEALAND_PROFILE_ID
+    assert_equal "au.payslip.v2", Verifiabl::Issuer::AUSTRALIAN_PAYSLIP_V2_SCHEMA
+    assert_equal "nz.payslip.v2", Verifiabl::Issuer::NEW_ZEALAND_PAYSLIP_V2_SCHEMA
+    assert_equal %w[AUD NZD USD GBP EUR CAD SGD HKD CHF ZAR], Verifiabl::Issuer::SUPPORTED_V2_CURRENCIES
+    assert_equal({value: "1.50", display: "$1.50"}, Verifiabl::Issuer.payslip_number("1.50", display: "$1.50"))
+    assert_equal({value: "47"}, Verifiabl::Issuer.payslip_number(47))
+    assert_raises(ArgumentError) { Verifiabl::Issuer.payslip_number("1e3") }
+    assert_equal({value: "1.5"}, Verifiabl::Issuer.payslip_number(1.5))
+  end
+
+  def test_payslip_number_writes_big_decimal_and_float_without_an_exponent
+    assert_equal({value: "8125.0"}, Verifiabl::Issuer.payslip_number(BigDecimal("8125.00")))
+    assert_equal({value: "-12.5"}, Verifiabl::Issuer.payslip_number(BigDecimal("-12.5")))
+    assert_equal({value: "0.0425"}, Verifiabl::Issuer.payslip_number(BigDecimal("0.0425")))
+    assert_equal({value: "0.00001"}, Verifiabl::Issuer.payslip_number(0.00001))
+    assert_equal({value: "10000000000000000"}, Verifiabl::Issuer.payslip_number(1e16))
+    assert_equal({value: "-0.00000012345"}, Verifiabl::Issuer.payslip_number(-1.2345e-7))
+    assert_raises(ArgumentError) { Verifiabl::Issuer.payslip_number(BigDecimal("NaN")) }
+    assert_raises(ArgumentError) { Verifiabl::Issuer.payslip_number(Float::INFINITY) }
+    assert_raises(ArgumentError) { Verifiabl::Issuer.payslip_number(Rational(3, 2)) }
+  end
+
+  def test_matches_every_au2_and_nz2_conformance_vector
+    vectors = read_fixture("jurisdiction-pii-profile-vectors-v1.json")
+    vectors.fetch("valid").each do |vector|
+      plaintext = format_jurisdiction_vector(vector)
+      assert_equal vector.fetch("plaintext"), plaintext, vector.fetch("id")
+      assert_equal vector.fetch("plaintextUtf8Hex"), plaintext.unpack1("H*"), vector.fetch("id")
+    end
+    vectors.fetch("invalid").each do |vector|
+      expected = (vector.fetch("expectedError") == "payload-too-large") ? RangeError : Verifiabl::Issuer::Pii::ValidationError
+      assert_raises(expected, vector.fetch("id")) { format_jurisdiction_vector(vector) }
+    end
   end
 
   def test_aes_256_gcm_round_trip_matches_verifier_shape
@@ -214,6 +309,21 @@ class ProtocolTest < Minitest::Test
 
   def read_fixture(name)
     JSON.parse(File.read(File.join(__dir__, "fixtures", name)))
+  end
+
+  def format_jurisdiction_vector(vector)
+    fields = snake_case_keys(vector.fetch("fields"))
+    if vector.fetch("profile") == "AU2"
+      Verifiabl::Issuer.format_australian_pii(fields)
+    else
+      Verifiabl::Issuer.format_new_zealand_pii(fields)
+    end
+  end
+
+  def snake_case_keys(value)
+    return value unless value.is_a?(Hash)
+
+    value.to_h { |key, item| [key.gsub(/[A-Z]/) { |letter| "_#{letter.downcase}" }.to_sym, snake_case_keys(item)] }
   end
 
   def decrypt(ciphertext, metadata, key)

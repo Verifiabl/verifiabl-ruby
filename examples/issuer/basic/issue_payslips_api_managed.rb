@@ -6,27 +6,24 @@ require "fileutils"
 require "verifiabl/issuer"
 
 PAYSLIP = {
-  external_id: "PAY-1001",
+  external_id: "PAY-1002",
   pii: {
-    employee_name: "Jane A. Doe",
-    position: "Senior Developer",
-    department: "Engineering",
-    employer_abn: "12345678901",
-    bsb: "062-000",
-    account_number: "12345678",
-    account_name: "Jane A Doe",
-    address: "12 Example St, Sydney NSW 2000"
+    employee_name: "Zoë Nguyễn",
+    ird_number: "***-***-***",
+    position: "Product Designer",
+    department: "Product",
+    employer_name: "Example Payroll NZ Ltd",
+    account_number: "**-****-*******-**",
+    account_name: "Zoë Nguyễn",
+    address: {lines: ["44 Harbour Rd"], suburb: "Parnell", city: "Auckland", postcode: "1052"}
   },
   non_pii: {
-    period_start: "2026-08-01",
     period_end: "2026-08-31",
     payment_date: "2026-09-04",
-    currency: "AUD",
-    gross_cents: 900_000,
-    paygw_cents: 225_000,
-    net_cents: 675_000,
-    ytd_gross_cents: 5_400_000,
-    ytd_paygw_cents: 1_350_000
+    currency: "NZD",
+    gross: Verifiabl::Issuer.payslip_number("7600.00"),
+    paye: Verifiabl::Issuer.payslip_number("1710.00"),
+    net: Verifiabl::Issuer.payslip_number("5890.00")
   }
 }.freeze
 
@@ -41,12 +38,12 @@ issuer = Verifiabl::Issuer::Client.new(
 provider_encryption_key = Base64.strict_decode64(
   ENV.fetch("VERIFIABL_ENCRYPTION_KEY_BASE64")
 )
-plaintext = Verifiabl::Issuer.format_pii(PAYSLIP.fetch(:pii))
+plaintext = Verifiabl::Issuer.format_new_zealand_pii(PAYSLIP.fetch(:pii))
 
 encrypted = Verifiabl::Issuer.encrypt_pii(plaintext, provider_encryption_key)
 
 registration = {
-  schema: "au.payslip.v1",
+  schema: Verifiabl::Issuer::NEW_ZEALAND_PAYSLIP_V2_SCHEMA,
   issued_at: Time.now.utc,
   payslip_non_pii: PAYSLIP.fetch(:non_pii),
   encryption_metadata: encrypted.encryption_metadata

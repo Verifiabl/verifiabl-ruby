@@ -9,9 +9,11 @@ require_relative "issuer/client"
 require_relative "issuer/crypto"
 require_relative "issuer/instrumentation"
 require_relative "issuer/payload"
+require_relative "issuer/payslip_v2"
 require_relative "issuer/pii"
 require_relative "issuer/qr"
 require_relative "issuer/rendering"
+require_relative "issuer/non_pii_v2"
 require_relative "issuer/serialization"
 require_relative "issuer/version"
 
@@ -20,6 +22,18 @@ module Verifiabl
     class << self
       def format_pii(fields)
         Pii.format(fields)
+      end
+
+      def format_australian_pii(fields)
+        Pii.format_australian(fields)
+      end
+
+      def format_new_zealand_pii(fields)
+        Pii.format_new_zealand(fields)
+      end
+
+      def payslip_number(value, display: nil)
+        PayslipV2.number(value, display:)
       end
 
       def encrypt_pii(plaintext, key)

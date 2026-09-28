@@ -1,7 +1,7 @@
 PATH
   remote: gems/verifiabl-issuer
   specs:
-    verifiabl-issuer (0.1.0.pre.rc.2)
+    verifiabl-issuer (0.1.0.pre.rc.3)
       base64 (~> 0.2)
       rqrcode_core (~> 2.1)
 
@@ -10,6 +10,7 @@ GEM
   specs:
     ast (2.4.3)
     base64 (0.3.0)
+    bigdecimal (4.1.3)
     bundler-audit (0.9.3)
       bundler (>= 1.2.0)
       thor (~> 1.0)
@@ -29,8 +30,9 @@ GEM
     racc (1.8.1)
     rainbow (3.1.1)
     rake (13.4.2)
-    rbs (3.10.4)
+    rbs (4.2.0)
       logger
+      prism (>= 1.6.0)
       tsort
     regexp_parser (2.12.0)
     rqrcode_core (2.1.0)
@@ -70,19 +72,22 @@ GEM
     unicode-display_width (3.2.0)
       unicode-emoji (~> 4.1)
     unicode-emoji (4.2.0)
+    yard (0.9.45)
 
 PLATFORMS
   arm64-darwin-25
   ruby
 
 DEPENDENCIES
+  bigdecimal (~> 4.1)
   bundler-audit (~> 0.9)
   minitest (~> 6.0)
   rake (~> 13.0)
-  rbs (~> 3.0)
+  rbs (~> 4.2)
   rubocop (~> 1.88)
   standard (~> 1.0)
   verifiabl-issuer!
+  yard (~> 0.9)
 
 BUNDLED WITH
   4.0.16

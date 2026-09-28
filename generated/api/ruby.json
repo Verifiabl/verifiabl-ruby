@@ -1,0 +1,1071 @@
+{
+  "schemaVersion": 1,
+  "generator": {
+    "name": "YARD",
+    "version": "0.9.45"
+  },
+  "package": "verifiabl-issuer",
+  "namespaces": [
+    {
+      "path": "Verifiabl",
+      "name": "Verifiabl",
+      "kind": "module",
+      "parent": null,
+      "documentation": {
+        "summary": "",
+        "tags": []
+      },
+      "members": []
+    },
+    {
+      "path": "Verifiabl::Issuer",
+      "name": "Issuer",
+      "kind": "module",
+      "parent": "Verifiabl",
+      "documentation": {
+        "summary": "",
+        "tags": []
+      },
+      "members": [
+        {
+          "path": "Verifiabl::Issuer.build_barcode_payload",
+          "name": "build_barcode_payload",
+          "kind": "method",
+          "scope": "singleton",
+          "signature": "def self.build_barcode_payload: (verifiabl_reference: String, encrypted_pii: binary) -> String",
+          "documentation": {
+            "summary": "",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer.build_barcode_png",
+          "name": "build_barcode_png",
+          "kind": "method",
+          "scope": "singleton",
+          "signature": "def self.build_barcode_png: (verifiabl_reference: String, encrypted_pii: binary, ?width: Integer, ?environment: Symbol | String, ?scan_base_url: String?, ?max_error_correction: Symbol | String, ?error_correction_level: Symbol | String, ?compression_level: Integer) -> Rendering::PngResult",
+          "documentation": {
+            "summary": "",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer.build_barcode_svg",
+          "name": "build_barcode_svg",
+          "kind": "method",
+          "scope": "singleton",
+          "signature": "def self.build_barcode_svg: (verifiabl_reference: String, encrypted_pii: binary, ?width: Numeric, ?environment: Symbol | String, ?scan_base_url: String?, ?max_error_correction: Symbol | String, ?error_correction_level: Symbol | String) -> Rendering::SvgResult",
+          "documentation": {
+            "summary": "",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer.build_scan_url",
+          "name": "build_scan_url",
+          "kind": "method",
+          "scope": "singleton",
+          "signature": "def self.build_scan_url: (verifiabl_reference: String, encrypted_pii: binary, ?environment: Symbol | String, ?scan_base_url: String?) -> String",
+          "documentation": {
+            "summary": "",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer.encrypt_pii",
+          "name": "encrypt_pii",
+          "kind": "method",
+          "scope": "singleton",
+          "signature": "def self.encrypt_pii: (String, binary) -> Crypto::EncryptedPii",
+          "documentation": {
+            "summary": "",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer.format_australian_pii",
+          "name": "format_australian_pii",
+          "kind": "method",
+          "scope": "singleton",
+          "signature": "def self.format_australian_pii: (australian_pii_fields) -> String",
+          "documentation": {
+            "summary": "",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer.format_new_zealand_pii",
+          "name": "format_new_zealand_pii",
+          "kind": "method",
+          "scope": "singleton",
+          "signature": "def self.format_new_zealand_pii: (new_zealand_pii_fields) -> String",
+          "documentation": {
+            "summary": "",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer.format_pii",
+          "name": "format_pii",
+          "kind": "method",
+          "scope": "singleton",
+          "signature": "def self.format_pii: (Hash[Symbol | String, String?]) -> String",
+          "documentation": {
+            "summary": "",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer.generate_verifiabl_reference",
+          "name": "generate_verifiabl_reference",
+          "kind": "method",
+          "scope": "singleton",
+          "signature": "def self.generate_verifiabl_reference: () -> String",
+          "documentation": {
+            "summary": "",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer.payslip_number",
+          "name": "payslip_number",
+          "kind": "method",
+          "scope": "singleton",
+          "signature": "def self.payslip_number: (String | Integer | Float | BigDecimal, ?display: String?) -> Hash[Symbol, String]",
+          "documentation": {
+            "summary": "",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer::AUSTRALIAN_PAYSLIP_V2_SCHEMA",
+          "name": "AUSTRALIAN_PAYSLIP_V2_SCHEMA",
+          "kind": "constant",
+          "signature": "AUSTRALIAN_PAYSLIP_V2_SCHEMA: String",
+          "documentation": {
+            "summary": "",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer::NEW_ZEALAND_PAYSLIP_V2_SCHEMA",
+          "name": "NEW_ZEALAND_PAYSLIP_V2_SCHEMA",
+          "kind": "constant",
+          "signature": "NEW_ZEALAND_PAYSLIP_V2_SCHEMA: String",
+          "documentation": {
+            "summary": "",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer::SUPPORTED_V2_CURRENCIES",
+          "name": "SUPPORTED_V2_CURRENCIES",
+          "kind": "constant",
+          "signature": "SUPPORTED_V2_CURRENCIES: Array[String]",
+          "documentation": {
+            "summary": "",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer::VERSION",
+          "name": "VERSION",
+          "kind": "constant",
+          "signature": "VERSION: String",
+          "documentation": {
+            "summary": "",
+            "tags": []
+          }
+        }
+      ]
+    },
+    {
+      "path": "Verifiabl::Issuer::ApiError",
+      "name": "ApiError",
+      "kind": "class",
+      "parent": "Verifiabl::Issuer",
+      "documentation": {
+        "summary": "",
+        "tags": []
+      },
+      "members": [
+        {
+          "path": "Verifiabl::Issuer::ApiError#body",
+          "name": "body",
+          "kind": "attribute",
+          "scope": "instance",
+          "access": "read",
+          "signature": "attr_reader body: Hash[String, untyped]?",
+          "documentation": {
+            "summary": "Returns the value of attribute body.",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer::ApiError#code",
+          "name": "code",
+          "kind": "attribute",
+          "scope": "instance",
+          "access": "read",
+          "signature": "attr_reader code: String",
+          "documentation": {
+            "summary": "Returns the value of attribute code.",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer::ApiError#request_id",
+          "name": "request_id",
+          "kind": "attribute",
+          "scope": "instance",
+          "access": "read",
+          "signature": "attr_reader request_id: String?",
+          "documentation": {
+            "summary": "Returns the value of attribute request_id.",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer::ApiError#status",
+          "name": "status",
+          "kind": "attribute",
+          "scope": "instance",
+          "access": "read",
+          "signature": "attr_reader status: Integer",
+          "documentation": {
+            "summary": "Returns the value of attribute status.",
+            "tags": []
+          }
+        }
+      ],
+      "superclass": "Error"
+    },
+    {
+      "path": "Verifiabl::Issuer::AuthError",
+      "name": "AuthError",
+      "kind": "class",
+      "parent": "Verifiabl::Issuer",
+      "documentation": {
+        "summary": "",
+        "tags": []
+      },
+      "members": [
+        {
+          "path": "Verifiabl::Issuer::AuthError#status",
+          "name": "status",
+          "kind": "attribute",
+          "scope": "instance",
+          "access": "read",
+          "signature": "attr_reader status: Integer?",
+          "documentation": {
+            "summary": "Returns the value of attribute status.",
+            "tags": []
+          }
+        }
+      ],
+      "superclass": "Error"
+    },
+    {
+      "path": "Verifiabl::Issuer::Client",
+      "name": "Client",
+      "kind": "class",
+      "parent": "Verifiabl::Issuer",
+      "documentation": {
+        "summary": "",
+        "tags": []
+      },
+      "members": [
+        {
+          "path": "Verifiabl::Issuer::Client#initialize",
+          "name": "initialize",
+          "kind": "method",
+          "scope": "instance",
+          "signature": "def initialize: (Configuration, ?transport: _Transport?) -> void",
+          "documentation": {
+            "summary": "The optional transport is a supported integration seam for test doubles\nand custom HTTP adapters. Timing and retry dependencies remain internal.",
+            "tags": [
+              {
+                "name": "param",
+                "text": "client credentials and request settings",
+                "subject": "configuration",
+                "types": [
+                  "Configuration"
+                ]
+              },
+              {
+                "name": "param",
+                "text": "adapter called with `method:`, `url:`,\n`headers:`, `body:`, and `timeout:`. It must return an object with\n`status`, `headers`, and `body` readers.",
+                "subject": "transport",
+                "types": [
+                  "#call",
+                  "nil"
+                ]
+              },
+              {
+                "name": "return",
+                "text": "a new instance of Client",
+                "types": [
+                  "Client"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer::Client#register_and_build_barcode",
+          "name": "register_and_build_barcode",
+          "kind": "method",
+          "scope": "instance",
+          "signature": "def register_and_build_barcode: (encrypted_pii: binary, schema: String, issued_at: String | Time, payslip_non_pii: Hash[Symbol | String, untyped], encryption_metadata: Hash[Symbol | String, binary]) -> Responses::BarcodeRegistration",
+          "documentation": {
+            "summary": "",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer::Client#register_non_pii",
+          "name": "register_non_pii",
+          "kind": "method",
+          "scope": "instance",
+          "signature": "def register_non_pii: (?verifiabl_reference: String?, schema: String, issued_at: String | Time, payslip_non_pii: Hash[Symbol | String, untyped], encryption_metadata: Hash[Symbol | String, binary]) -> Responses::Registration",
+          "documentation": {
+            "summary": "Registers non-PII data under a provider-generated reference. When the\ncaller omits one, generate it once before the request loop so every\nautomatic retry uses the same idempotency key. Callers that need to\nretry from another process or invocation should generate, persist, and\npass the reference explicitly.",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer::Client#register_non_pii_batch",
+          "name": "register_non_pii_batch",
+          "kind": "method",
+          "scope": "instance",
+          "signature": "def register_non_pii_batch: (Array[Hash[Symbol | String, untyped]]) -> Responses::BatchRegistration",
+          "documentation": {
+            "summary": "",
+            "tags": []
+          }
+        }
+      ]
+    },
+    {
+      "path": "Verifiabl::Issuer::Configuration",
+      "name": "Configuration",
+      "kind": "class",
+      "parent": "Verifiabl::Issuer",
+      "documentation": {
+        "summary": "Immutable settings used to construct one Client. Applications own the\nresulting client and can place it in their normal dependency container.",
+        "tags": []
+      },
+      "members": [
+        {
+          "path": "Verifiabl::Issuer::Configuration#client_id",
+          "name": "client_id",
+          "kind": "attribute",
+          "scope": "instance",
+          "access": "read",
+          "signature": "attr_reader client_id: String?",
+          "documentation": {
+            "summary": "",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer::Configuration#client_secret",
+          "name": "client_secret",
+          "kind": "attribute",
+          "scope": "instance",
+          "access": "read",
+          "signature": "attr_reader client_secret: String?",
+          "documentation": {
+            "summary": "",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer::Configuration#environment",
+          "name": "environment",
+          "kind": "attribute",
+          "scope": "instance",
+          "access": "read",
+          "signature": "attr_reader environment: Symbol",
+          "documentation": {
+            "summary": "",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer::Configuration#initialize",
+          "name": "initialize",
+          "kind": "method",
+          "scope": "instance",
+          "signature": "def initialize: (?client_id: String?, ?client_secret: String?, ?environment: Symbol | String, ?issuer_base_url: String?, ?token_url: String?, ?timeout: Numeric, ?max_retries: Integer, ?on_request: Proc?, ?on_response: Proc?, ?on_error: Proc?) -> void",
+          "documentation": {
+            "summary": "",
+            "tags": [
+              {
+                "name": "raise",
+                "text": "",
+                "types": [
+                  "ArgumentError"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer::Configuration#issuer_base_url",
+          "name": "issuer_base_url",
+          "kind": "attribute",
+          "scope": "instance",
+          "access": "read",
+          "signature": "attr_reader issuer_base_url: String?",
+          "documentation": {
+            "summary": "",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer::Configuration#max_retries",
+          "name": "max_retries",
+          "kind": "attribute",
+          "scope": "instance",
+          "access": "read",
+          "signature": "attr_reader max_retries: Integer",
+          "documentation": {
+            "summary": "",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer::Configuration#on_error",
+          "name": "on_error",
+          "kind": "attribute",
+          "scope": "instance",
+          "access": "read",
+          "signature": "attr_reader on_error: Proc?",
+          "documentation": {
+            "summary": "",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer::Configuration#on_request",
+          "name": "on_request",
+          "kind": "attribute",
+          "scope": "instance",
+          "access": "read",
+          "signature": "attr_reader on_request: Proc?",
+          "documentation": {
+            "summary": "",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer::Configuration#on_response",
+          "name": "on_response",
+          "kind": "attribute",
+          "scope": "instance",
+          "access": "read",
+          "signature": "attr_reader on_response: Proc?",
+          "documentation": {
+            "summary": "",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer::Configuration#timeout",
+          "name": "timeout",
+          "kind": "attribute",
+          "scope": "instance",
+          "access": "read",
+          "signature": "attr_reader timeout: Numeric",
+          "documentation": {
+            "summary": "",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer::Configuration#token_url",
+          "name": "token_url",
+          "kind": "attribute",
+          "scope": "instance",
+          "access": "read",
+          "signature": "attr_reader token_url: String?",
+          "documentation": {
+            "summary": "",
+            "tags": []
+          }
+        }
+      ]
+    },
+    {
+      "path": "Verifiabl::Issuer::Crypto",
+      "name": "Crypto",
+      "kind": "module",
+      "parent": "Verifiabl::Issuer",
+      "documentation": {
+        "summary": "",
+        "tags": []
+      },
+      "members": []
+    },
+    {
+      "path": "Verifiabl::Issuer::Crypto::EncryptedPii",
+      "name": "EncryptedPii",
+      "kind": "class",
+      "parent": "Verifiabl::Issuer::Crypto",
+      "documentation": {
+        "summary": "",
+        "tags": []
+      },
+      "members": [
+        {
+          "path": "Verifiabl::Issuer::Crypto::EncryptedPii#encrypted_pii",
+          "name": "encrypted_pii",
+          "kind": "attribute",
+          "scope": "instance",
+          "access": "read",
+          "signature": "attr_reader encrypted_pii: binary",
+          "documentation": {
+            "summary": "Returns the value of attribute encrypted_pii",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer::Crypto::EncryptedPii#encryption_metadata",
+          "name": "encryption_metadata",
+          "kind": "attribute",
+          "scope": "instance",
+          "access": "read",
+          "signature": "attr_reader encryption_metadata: Hash[Symbol, binary]",
+          "documentation": {
+            "summary": "Returns the value of attribute encryption_metadata",
+            "tags": []
+          }
+        }
+      ],
+      "superclass": "Data"
+    },
+    {
+      "path": "Verifiabl::Issuer::Error",
+      "name": "Error",
+      "kind": "class",
+      "parent": "Verifiabl::Issuer",
+      "documentation": {
+        "summary": "",
+        "tags": []
+      },
+      "members": [],
+      "superclass": "StandardError"
+    },
+    {
+      "path": "Verifiabl::Issuer::IvReuseError",
+      "name": "IvReuseError",
+      "kind": "class",
+      "parent": "Verifiabl::Issuer",
+      "documentation": {
+        "summary": "",
+        "tags": []
+      },
+      "members": [],
+      "superclass": "ApiError"
+    },
+    {
+      "path": "Verifiabl::Issuer::Qr",
+      "name": "Qr",
+      "kind": "module",
+      "parent": "Verifiabl::Issuer",
+      "documentation": {
+        "summary": "QR matrix generation shared by the future SVG and PNG compositors.\n\nrqrcode_core produces the same codewords as the Node and .NET encoders,\nbut its built-in mask penalty predates the current ISO rules. CanonicalCode\nreplaces only mask selection so that all SDKs produce the same matrix.",
+        "tags": []
+      },
+      "members": []
+    },
+    {
+      "path": "Verifiabl::Issuer::Qr::CapacityError",
+      "name": "CapacityError",
+      "kind": "class",
+      "parent": "Verifiabl::Issuer::Qr",
+      "documentation": {
+        "summary": "",
+        "tags": []
+      },
+      "members": [],
+      "superclass": "ArgumentError"
+    },
+    {
+      "path": "Verifiabl::Issuer::Rendering",
+      "name": "Rendering",
+      "kind": "module",
+      "parent": "Verifiabl::Issuer",
+      "documentation": {
+        "summary": "Deterministic compositor for the official Verifiabl badge frame.",
+        "tags": []
+      },
+      "members": []
+    },
+    {
+      "path": "Verifiabl::Issuer::Rendering::PngResult",
+      "name": "PngResult",
+      "kind": "class",
+      "parent": "Verifiabl::Issuer::Rendering",
+      "documentation": {
+        "summary": "",
+        "tags": []
+      },
+      "members": [
+        {
+          "path": "Verifiabl::Issuer::Rendering::PngResult#content",
+          "name": "content",
+          "kind": "attribute",
+          "scope": "instance",
+          "access": "read",
+          "signature": "attr_reader content: String",
+          "documentation": {
+            "summary": "Returns the value of attribute content",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer::Rendering::PngResult#degraded",
+          "name": "degraded",
+          "kind": "attribute",
+          "scope": "instance",
+          "access": "read",
+          "signature": "attr_reader degraded: bool",
+          "documentation": {
+            "summary": "Returns the value of attribute degraded",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer::Rendering::PngResult#error_correction_level",
+          "name": "error_correction_level",
+          "kind": "attribute",
+          "scope": "instance",
+          "access": "read",
+          "signature": "attr_reader error_correction_level: Symbol",
+          "documentation": {
+            "summary": "Returns the value of attribute error_correction_level",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer::Rendering::PngResult#height",
+          "name": "height",
+          "kind": "attribute",
+          "scope": "instance",
+          "access": "read",
+          "signature": "attr_reader height: Integer",
+          "documentation": {
+            "summary": "Returns the value of attribute height",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer::Rendering::PngResult#module_px",
+          "name": "module_px",
+          "kind": "attribute",
+          "scope": "instance",
+          "access": "read",
+          "signature": "attr_reader module_px: Numeric",
+          "documentation": {
+            "summary": "Returns the value of attribute module_px",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer::Rendering::PngResult#png",
+          "name": "png",
+          "kind": "attribute",
+          "scope": "instance",
+          "access": "read",
+          "signature": "attr_reader png: String",
+          "documentation": {
+            "summary": "Returns the value of attribute png",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer::Rendering::PngResult#qr_version",
+          "name": "qr_version",
+          "kind": "attribute",
+          "scope": "instance",
+          "access": "read",
+          "signature": "attr_reader qr_version: Integer",
+          "documentation": {
+            "summary": "Returns the value of attribute qr_version",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer::Rendering::PngResult#width",
+          "name": "width",
+          "kind": "attribute",
+          "scope": "instance",
+          "access": "read",
+          "signature": "attr_reader width: Integer",
+          "documentation": {
+            "summary": "Returns the value of attribute width",
+            "tags": []
+          }
+        }
+      ],
+      "superclass": "Data"
+    },
+    {
+      "path": "Verifiabl::Issuer::Rendering::SvgResult",
+      "name": "SvgResult",
+      "kind": "class",
+      "parent": "Verifiabl::Issuer::Rendering",
+      "documentation": {
+        "summary": "",
+        "tags": []
+      },
+      "members": [
+        {
+          "path": "Verifiabl::Issuer::Rendering::SvgResult#content",
+          "name": "content",
+          "kind": "attribute",
+          "scope": "instance",
+          "access": "read",
+          "signature": "attr_reader content: String",
+          "documentation": {
+            "summary": "Returns the value of attribute content",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer::Rendering::SvgResult#degraded",
+          "name": "degraded",
+          "kind": "attribute",
+          "scope": "instance",
+          "access": "read",
+          "signature": "attr_reader degraded: bool",
+          "documentation": {
+            "summary": "Returns the value of attribute degraded",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer::Rendering::SvgResult#error_correction_level",
+          "name": "error_correction_level",
+          "kind": "attribute",
+          "scope": "instance",
+          "access": "read",
+          "signature": "attr_reader error_correction_level: Symbol",
+          "documentation": {
+            "summary": "Returns the value of attribute error_correction_level",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer::Rendering::SvgResult#height",
+          "name": "height",
+          "kind": "attribute",
+          "scope": "instance",
+          "access": "read",
+          "signature": "attr_reader height: Numeric",
+          "documentation": {
+            "summary": "Returns the value of attribute height",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer::Rendering::SvgResult#module_px",
+          "name": "module_px",
+          "kind": "attribute",
+          "scope": "instance",
+          "access": "read",
+          "signature": "attr_reader module_px: Numeric",
+          "documentation": {
+            "summary": "Returns the value of attribute module_px",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer::Rendering::SvgResult#qr_version",
+          "name": "qr_version",
+          "kind": "attribute",
+          "scope": "instance",
+          "access": "read",
+          "signature": "attr_reader qr_version: Integer",
+          "documentation": {
+            "summary": "Returns the value of attribute qr_version",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer::Rendering::SvgResult#svg",
+          "name": "svg",
+          "kind": "attribute",
+          "scope": "instance",
+          "access": "read",
+          "signature": "attr_reader svg: String",
+          "documentation": {
+            "summary": "Returns the value of attribute svg",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer::Rendering::SvgResult#width",
+          "name": "width",
+          "kind": "attribute",
+          "scope": "instance",
+          "access": "read",
+          "signature": "attr_reader width: Numeric",
+          "documentation": {
+            "summary": "Returns the value of attribute width",
+            "tags": []
+          }
+        }
+      ],
+      "superclass": "Data"
+    },
+    {
+      "path": "Verifiabl::Issuer::Responses",
+      "name": "Responses",
+      "kind": "module",
+      "parent": "Verifiabl::Issuer",
+      "documentation": {
+        "summary": "Validated public result types returned by Client.",
+        "tags": []
+      },
+      "members": []
+    },
+    {
+      "path": "Verifiabl::Issuer::Responses::BarcodeImage",
+      "name": "BarcodeImage",
+      "kind": "class",
+      "parent": "Verifiabl::Issuer::Responses",
+      "documentation": {
+        "summary": "",
+        "tags": []
+      },
+      "members": [
+        {
+          "path": "Verifiabl::Issuer::Responses::BarcodeImage#data",
+          "name": "data",
+          "kind": "attribute",
+          "scope": "instance",
+          "access": "read",
+          "signature": "attr_reader data: String",
+          "documentation": {
+            "summary": "Returns the value of attribute data",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer::Responses::BarcodeImage#format",
+          "name": "format",
+          "kind": "attribute",
+          "scope": "instance",
+          "access": "read",
+          "signature": "attr_reader format: String",
+          "documentation": {
+            "summary": "Returns the value of attribute format",
+            "tags": []
+          }
+        }
+      ],
+      "superclass": "Data"
+    },
+    {
+      "path": "Verifiabl::Issuer::Responses::BarcodeRegistration",
+      "name": "BarcodeRegistration",
+      "kind": "class",
+      "parent": "Verifiabl::Issuer::Responses",
+      "documentation": {
+        "summary": "",
+        "tags": []
+      },
+      "members": [
+        {
+          "path": "Verifiabl::Issuer::Responses::BarcodeRegistration#barcode",
+          "name": "barcode",
+          "kind": "attribute",
+          "scope": "instance",
+          "access": "read",
+          "signature": "attr_reader barcode: BarcodeImage",
+          "documentation": {
+            "summary": "Returns the value of attribute barcode",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer::Responses::BarcodeRegistration#verifiabl_reference",
+          "name": "verifiabl_reference",
+          "kind": "attribute",
+          "scope": "instance",
+          "access": "read",
+          "signature": "attr_reader verifiabl_reference: String",
+          "documentation": {
+            "summary": "Returns the value of attribute verifiabl_reference",
+            "tags": []
+          }
+        }
+      ],
+      "superclass": "Data"
+    },
+    {
+      "path": "Verifiabl::Issuer::Responses::BatchRecord",
+      "name": "BatchRecord",
+      "kind": "class",
+      "parent": "Verifiabl::Issuer::Responses",
+      "documentation": {
+        "summary": "",
+        "tags": []
+      },
+      "members": [
+        {
+          "path": "Verifiabl::Issuer::Responses::BatchRecord#code",
+          "name": "code",
+          "kind": "attribute",
+          "scope": "instance",
+          "access": "read",
+          "signature": "attr_reader code: String?",
+          "documentation": {
+            "summary": "Returns the value of attribute code",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer::Responses::BatchRecord#detail",
+          "name": "detail",
+          "kind": "attribute",
+          "scope": "instance",
+          "access": "read",
+          "signature": "attr_reader detail: String?",
+          "documentation": {
+            "summary": "Returns the value of attribute detail",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer::Responses::BatchRecord#external_id",
+          "name": "external_id",
+          "kind": "attribute",
+          "scope": "instance",
+          "access": "read",
+          "signature": "attr_reader external_id: String?",
+          "documentation": {
+            "summary": "Returns the value of attribute external_id",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer::Responses::BatchRecord#status",
+          "name": "status",
+          "kind": "attribute",
+          "scope": "instance",
+          "access": "read",
+          "signature": "attr_reader status: String",
+          "documentation": {
+            "summary": "Returns the value of attribute status",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer::Responses::BatchRecord#verifiabl_reference",
+          "name": "verifiabl_reference",
+          "kind": "attribute",
+          "scope": "instance",
+          "access": "read",
+          "signature": "attr_reader verifiabl_reference: String",
+          "documentation": {
+            "summary": "Returns the value of attribute verifiabl_reference",
+            "tags": []
+          }
+        }
+      ],
+      "superclass": "Data"
+    },
+    {
+      "path": "Verifiabl::Issuer::Responses::BatchRegistration",
+      "name": "BatchRegistration",
+      "kind": "class",
+      "parent": "Verifiabl::Issuer::Responses",
+      "documentation": {
+        "summary": "",
+        "tags": []
+      },
+      "members": [
+        {
+          "path": "Verifiabl::Issuer::Responses::BatchRegistration#results",
+          "name": "results",
+          "kind": "attribute",
+          "scope": "instance",
+          "access": "read",
+          "signature": "attr_reader results: Array[BatchRecord]",
+          "documentation": {
+            "summary": "Returns the value of attribute results",
+            "tags": []
+          }
+        }
+      ],
+      "superclass": "Data"
+    },
+    {
+      "path": "Verifiabl::Issuer::Responses::Registration",
+      "name": "Registration",
+      "kind": "class",
+      "parent": "Verifiabl::Issuer::Responses",
+      "documentation": {
+        "summary": "",
+        "tags": []
+      },
+      "members": [
+        {
+          "path": "Verifiabl::Issuer::Responses::Registration#verifiabl_reference",
+          "name": "verifiabl_reference",
+          "kind": "attribute",
+          "scope": "instance",
+          "access": "read",
+          "signature": "attr_reader verifiabl_reference: String",
+          "documentation": {
+            "summary": "Returns the value of attribute verifiabl_reference",
+            "tags": []
+          }
+        }
+      ],
+      "superclass": "Data"
+    },
+    {
+      "path": "Verifiabl::Issuer::TimeoutError",
+      "name": "TimeoutError",
+      "kind": "class",
+      "parent": "Verifiabl::Issuer",
+      "documentation": {
+        "summary": "",
+        "tags": []
+      },
+      "members": [
+        {
+          "path": "Verifiabl::Issuer::TimeoutError#timeout",
+          "name": "timeout",
+          "kind": "attribute",
+          "scope": "instance",
+          "access": "read",
+          "signature": "attr_reader timeout: Numeric",
+          "documentation": {
+            "summary": "Returns the value of attribute timeout.",
+            "tags": []
+          }
+        }
+      ],
+      "superclass": "TransportError"
+    },
+    {
+      "path": "Verifiabl::Issuer::TransportError",
+      "name": "TransportError",
+      "kind": "class",
+      "parent": "Verifiabl::Issuer",
+      "documentation": {
+        "summary": "",
+        "tags": []
+      },
+      "members": [],
+      "superclass": "Error"
+    }
+  ],
+  "constants": []
+}

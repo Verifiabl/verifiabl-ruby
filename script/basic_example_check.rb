@@ -41,9 +41,42 @@ Dir.mktmpdir("verifiabl-basic-example-") do |directory|
     exception: true
   )
 
-  %w[issue_payslips_self_managed.rb issue_payslips_api_managed.rb].each do |source|
+  # Evaluate only the fixture definition, before either example creates a client.
+  # This verifies that the published gem can format its PII and serialize its
+  # non-PII fields without needing sandbox credentials or making a request.
+  check_fixture = <<~'RUBY'
+    require "verifiabl/issuer"
+    source = File.read(ARGV.fetch(0))
+    eval(source.split(/^issuer = /, 2).first, TOPLEVEL_BINDING, ARGV.fetch(0))
+    schema, currency, gross, tax_field, tax = ARGV.drop(1)
+    issuer = Verifiabl::Issuer
+    formatter = (schema == issuer::AUSTRALIAN_PAYSLIP_V2_SCHEMA) ? :format_australian_pii : :format_new_zealand_pii
+    plaintext = issuer.public_send(formatter, PAYSLIP.fetch(:pii))
+    encrypted = issuer.encrypt_pii(plaintext, "\x00".b * 32)
+    wire = issuer::Serialization.registration_to_wire(
+      schema: schema,
+      issued_at: Time.now.utc,
+      payslip_non_pii: PAYSLIP.fetch(:non_pii),
+      encryption_metadata: encrypted.encryption_metadata
+    ).fetch("payslip_non_pii")
+    expected = {
+      "period_end" => "2026-08-31",
+      "payment_date" => "2026-09-04",
+      "currency" => currency,
+      "gross" => {"value" => gross},
+      tax_field => {"value" => tax},
+      "net" => {"value" => (currency == "AUD") ? "6750.00" : "5890.00"}
+    }
+    abort "Unexpected #{schema} wire fields: #{wire.keys}" unless wire == expected
+  RUBY
+
+  {
+    "issue_payslips_self_managed.rb" => ["au.payslip.v2", "AUD", "9000.00", "paygw", "2250.00"],
+    "issue_payslips_api_managed.rb" => ["nz.payslip.v2", "NZD", "7600.00", "paye", "1710.00"]
+  }.each do |source, expected|
     FileUtils.cp(File.join(example, source), directory)
     system(consumer_env, ruby, "-c", source, chdir: directory, exception: true)
+    system(consumer_env, ruby, "-e", check_fixture, source, *expected, chdir: directory, exception: true)
     _stdout, stderr, status = Open3.capture3(consumer_env, ruby, source, chdir: directory)
     unless !status.success? && stderr.include?('key not found: "VERIFIABL_CLIENT_ID"')
       abort "#{source} did not load the packed gem before reading credentials:\n#{stderr}"

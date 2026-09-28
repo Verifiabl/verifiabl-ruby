@@ -1,10 +1,49 @@
 module Verifiabl
   module Issuer
     VERSION: String
+    AUSTRALIAN_PAYSLIP_V2_SCHEMA: String
+    NEW_ZEALAND_PAYSLIP_V2_SCHEMA: String
+    SUPPORTED_V2_CURRENCIES: Array[String]
 
     type binary = String
+    type australian_address = {
+      ?lines: Array[String]?,
+      ?suburb: String?,
+      ?state_or_territory: String?,
+      ?postcode: String?
+    }
+    type new_zealand_address = {
+      ?lines: Array[String]?,
+      ?suburb: String?,
+      ?city: String?,
+      ?postcode: String?
+    }
+    type australian_pii_fields = {
+      ?employee_name: String?,
+      ?position: String?,
+      ?department: String?,
+      ?employer_name: String?,
+      ?employer_abn: String?,
+      ?bsb: String?,
+      ?account_number: String?,
+      ?account_name: String?,
+      ?address: australian_address?
+    }
+    type new_zealand_pii_fields = {
+      ?employee_name: String?,
+      ?ird_number: String?,
+      ?position: String?,
+      ?department: String?,
+      ?employer_name: String?,
+      ?account_number: String?,
+      ?account_name: String?,
+      ?address: new_zealand_address?
+    }
 
     def self.format_pii: (Hash[Symbol | String, String?]) -> String
+    def self.format_australian_pii: (australian_pii_fields) -> String
+    def self.format_new_zealand_pii: (new_zealand_pii_fields) -> String
+    def self.payslip_number: (String | Integer | Float | BigDecimal, ?display: String?) -> Hash[Symbol, String]
     def self.encrypt_pii: (String, binary) -> Crypto::EncryptedPii
     def self.generate_verifiabl_reference: () -> String
     def self.build_barcode_payload: (verifiabl_reference: String, encrypted_pii: binary) -> String
@@ -26,8 +65,18 @@ module Verifiabl
       def initialize: (?client_id: String?, ?client_secret: String?, ?environment: Symbol | String, ?issuer_base_url: String?, ?token_url: String?, ?timeout: Numeric, ?max_retries: Integer, ?on_request: Proc?, ?on_response: Proc?, ?on_error: Proc?) -> void
     end
 
+    interface _TransportResponse
+      def status: () -> Integer
+      def headers: () -> Hash[String, String]
+      def body: () -> String
+    end
+
+    interface _Transport
+      def call: (method: Symbol, url: String, headers: Hash[String, String], body: String, timeout: Numeric) -> _TransportResponse
+    end
+
     class Client
-      def initialize: (Configuration, ?transport: untyped, ?clock: untyped, ?sleeper: untyped, ?random: Random?, ?monotonic_clock: untyped) -> void
+      def initialize: (Configuration, ?transport: _Transport?) -> void
       def register_non_pii: (?verifiabl_reference: String?, schema: String, issued_at: String | Time, payslip_non_pii: Hash[Symbol | String, untyped], encryption_metadata: Hash[Symbol | String, binary]) -> Responses::Registration
       def register_non_pii_batch: (Array[Hash[Symbol | String, untyped]]) -> Responses::BatchRegistration
       def register_and_build_barcode: (encrypted_pii: binary, schema: String, issued_at: String | Time, payslip_non_pii: Hash[Symbol | String, untyped], encryption_metadata: Hash[Symbol | String, binary]) -> Responses::BarcodeRegistration
@@ -88,14 +137,6 @@ module Verifiabl
       end
     end
 
-    module Payload
-      class ScanUrlParts < Data
-        attr_reader content: String
-        attr_reader byte_prefix: String
-        attr_reader alphanumeric_ciphertext: String
-      end
-    end
-
     module Rendering
       class SvgResult < Data
         attr_reader svg: String
@@ -121,15 +162,6 @@ module Verifiabl
 
     module Qr
       class CapacityError < ArgumentError
-      end
-
-      class Result < Data
-        attr_reader content: String
-        attr_reader modules: Array[Array[bool]]
-        attr_reader version: Integer
-        attr_reader mask_pattern: Integer
-        attr_reader error_correction_level: Symbol
-        attr_reader segment_modes: Array[Symbol]
       end
     end
   end

@@ -26,10 +26,17 @@ module Verifiabl
         nil
       end
 
-      def initialize(configuration, **runtime_dependencies)
+      # The optional transport is a supported integration seam for test doubles
+      # and custom HTTP adapters. Timing and retry dependencies remain internal.
+      #
+      # @param configuration [Configuration] client credentials and request settings
+      # @param transport [#call, nil] adapter called with `method:`, `url:`,
+      #   `headers:`, `body:`, and `timeout:`. It must return an object with
+      #   `status`, `headers`, and `body` readers.
+      def initialize(configuration, transport: nil)
         configure_endpoints(configuration)
         configure_retry_policy(configuration)
-        configure_runtime_dependencies(**runtime_dependencies)
+        configure_runtime_dependencies(transport: transport)
         @on_request = configuration.on_request
         @on_response = configuration.on_response
         @on_error = configuration.on_error
@@ -51,9 +58,10 @@ module Verifiabl
       end
 
       def register_non_pii_batch(records)
-        body = Serialization.batch_to_wire(records: records)
-        parsed = post("/v1/registerNonPIIBatch", body, idempotent: true)
-        Responses.batch_registration(parsed, expected_records: records)
+        body, indices, errors = Serialization.prepare_batch(records: records)
+        results = local_batch_results(records, errors)
+        merge_batch_results!(results, records, body, indices) unless indices.empty?
+        Responses::BatchRegistration.new(results: results.freeze)
       end
 
       def register_and_build_barcode(encrypted_pii:, **registration)
@@ -62,6 +70,24 @@ module Verifiabl
       end
 
       private
+
+      def local_batch_results(records, errors)
+        results = Array.new(records.length)
+        errors.each do |index, detail|
+          record = records.fetch(index)
+          results[index] = Responses::BatchRecord.new(
+            status: "error", verifiabl_reference: record[:verifiabl_reference] || record["verifiabl_reference"],
+            external_id: record[:external_id] || record["external_id"], code: "VALIDATION_FAILED", detail:
+          )
+        end
+        results
+      end
+
+      def merge_batch_results!(results, records, body, indices)
+        parsed = post("/v1/registerNonPIIBatch", body, idempotent: true)
+        remote = Responses.batch_registration(parsed, expected_records: indices.map { |index| records.fetch(index) })
+        indices.each_with_index { |index, position| results[index] = remote.results.fetch(position) }
+      end
 
       def post(path, body, idempotent:)
         deadline = @monotonic_clock.call + @timeout
@@ -213,7 +239,9 @@ module Verifiabl
       end
 
       def valid_access_token?(parsed)
-        parsed["access_token"].is_a?(String) && !parsed["access_token"].empty? && parsed["token_type"] == "Bearer"
+        token_type = parsed["token_type"]
+        parsed["access_token"].is_a?(String) && !parsed["access_token"].empty? &&
+          token_type.is_a?(String) && token_type.casecmp?("Bearer")
       end
 
       def valid_token_expiry?(value)
@@ -295,6 +323,8 @@ module Verifiabl
       end
 
       def configure_runtime_dependencies(transport: nil, clock: nil, sleeper: nil, random: nil, monotonic_clock: nil)
+        raise ArgumentError, "transport must respond to call" unless transport.nil? || transport.respond_to?(:call)
+
         @transport = transport || method(:net_http_request)
         @clock = clock || -> { Time.now }
         @monotonic_clock = monotonic_clock || -> { Process.clock_gettime(Process::CLOCK_MONOTONIC) }

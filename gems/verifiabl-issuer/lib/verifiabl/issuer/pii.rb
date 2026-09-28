@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative "generated/pii_text_profile"
+require_relative "generated/jurisdiction_pii_profiles"
 
 module Verifiabl
   module Issuer
@@ -8,7 +9,11 @@ module Verifiabl
       FIELD_ORDER = %i[
         employee_name position department employer_abn bsb account_number account_name address
       ].freeze
+      AUSTRALIAN_FIELD_ORDER = JurisdictionPiiProfiles::AUSTRALIAN_FIELD_ORDER
+      NEW_ZEALAND_FIELD_ORDER = JurisdictionPiiProfiles::NEW_ZEALAND_FIELD_ORDER
       PROFILE_ID = PiiTextProfile::PROFILE_ID
+      AUSTRALIAN_PROFILE_ID = JurisdictionPiiProfiles::AUSTRALIAN_PROFILE_ID
+      NEW_ZEALAND_PROFILE_ID = JurisdictionPiiProfiles::NEW_ZEALAND_PROFILE_ID
       PROFILE_UNICODE_VERSION = PiiTextProfile::UNICODE_VERSION
       PAYLOAD_MAX_BYTES = PiiTextProfile::PAYLOAD_MAX_BYTES
       FORMAT_CHARACTER_RANGES = PiiTextProfile::FORMAT_CHARACTER_RANGES
@@ -45,34 +50,117 @@ module Verifiabl
         values, violations = normalize_values(fields)
         raise ValidationError, violations unless violations.empty?
 
-        plaintext = "P2|#{FIELD_ORDER.map { |field| values.fetch(field) }.join("|")}"
-        raise RangeError, "P2 plaintext exceeds #{PAYLOAD_MAX_BYTES} UTF-8 bytes" if plaintext.bytesize > PAYLOAD_MAX_BYTES
-        plaintext
+        format_profile("P2", FIELD_ORDER.map { |field| values.fetch(field) })
       end
 
-      def validate_fields!(fields)
+      def format_australian(fields)
+        allowed = %i[
+          employee_name position department employer_name employer_abn bsb account_number account_name address
+        ]
+        validate_fields!(fields, allowed)
+        values, violations = normalize_named_values(fields, allowed - [:address])
+        address, address_violations = australian_address(field_value(fields, :address))
+        violations.concat(address_violations)
+        raise ValidationError, violations unless violations.empty?
+
+        employer_identity = values.fetch(:employer_abn)
+        employer_identity = values.fetch(:employer_name) if employer_identity.empty?
+        wire_values = values.merge(employer_identity: employer_identity, address: address)
+        format_profile(JurisdictionPiiProfiles::AUSTRALIAN_MARKER, AUSTRALIAN_FIELD_ORDER.map { |field| wire_values.fetch(field) })
+      end
+
+      def format_new_zealand(fields)
+        allowed = %i[
+          employee_name ird_number position department employer_name account_number account_name address
+        ]
+        validate_fields!(fields, allowed)
+        values, violations = normalize_named_values(fields, allowed - [:address])
+        address, address_violations = new_zealand_address(field_value(fields, :address))
+        violations.concat(address_violations)
+        raise ValidationError, violations unless violations.empty?
+
+        wire_values = values.merge(address: address)
+        format_profile(JurisdictionPiiProfiles::NEW_ZEALAND_MARKER, NEW_ZEALAND_FIELD_ORDER.map { |field| wire_values.fetch(field) })
+      end
+
+      def validate_fields!(fields, allowed = FIELD_ORDER)
         raise ArgumentError, "fields must be a Hash" unless fields.is_a?(Hash)
 
         normalized_keys = fields.keys.map do |key|
           raise ArgumentError, "PII field names must be strings or symbols" unless key.is_a?(String) || key.is_a?(Symbol)
           key.to_sym
         end
-        unknown = normalized_keys - FIELD_ORDER
+        unknown = normalized_keys - allowed
         raise ArgumentError, "unknown PII field: #{unknown.first}" unless unknown.empty?
       end
       private_class_method :validate_fields!
 
       def normalize_values(fields)
-        values = {}
-        violations = []
-        FIELD_ORDER.each do |field|
+        normalize_named_values(fields, FIELD_ORDER)
+      end
+      private_class_method :normalize_values
+
+      def normalize_named_values(fields, names)
+        names.each_with_object([{}, []]) do |field, (values, violations)|
           value, violation = normalize_value(field, field_value(fields, field))
           values[field] = value
           violations << violation if violation
         end
-        [values, violations]
       end
-      private_class_method :normalize_values
+      private_class_method :normalize_named_values
+
+      def australian_address(raw)
+        address(raw, %i[lines suburb state_or_territory postcode]) do |values|
+          locality = compact_join(
+            [values.fetch(:suburb), values.fetch(:state_or_territory), values.fetch(:postcode)],
+            " "
+          )
+          compact_join([*values.fetch(:lines), locality], ", ")
+        end
+      end
+      private_class_method :australian_address
+
+      def new_zealand_address(raw)
+        address(raw, %i[lines suburb city postcode]) do |values|
+          city = compact_join([values.fetch(:city), values.fetch(:postcode)], " ")
+          compact_join([*values.fetch(:lines), values.fetch(:suburb), city], ", ")
+        end
+      end
+      private_class_method :new_zealand_address
+
+      def address(raw, allowed)
+        return ["", []] if raw.nil?
+
+        validate_fields!(raw, allowed)
+        lines = field_value(raw, :lines)
+        raise ArgumentError, "address.lines must be an Array" unless lines.nil? || lines.is_a?(Array)
+
+        violations = []
+        normalized_lines = (lines || []).map do |line|
+          value, violation = normalize_value(:address, line)
+          violations << violation if violation
+          value
+        end
+        values, field_violations = normalize_named_values(raw, allowed - [:lines])
+        violations.concat(field_violations)
+        values[:lines] = normalized_lines
+        [yield(values), violations]
+      end
+      private_class_method :address
+
+      def compact_join(values, delimiter)
+        values.reject(&:empty?).join(delimiter)
+      end
+      private_class_method :compact_join
+
+      def format_profile(version, segments)
+        plaintext = "#{version}|#{segments.join("|")}"
+        limit = (version == "P2") ? PAYLOAD_MAX_BYTES : JurisdictionPiiProfiles::PAYLOAD_MAX_BYTES
+        raise RangeError, "#{version} plaintext exceeds #{limit} UTF-8 bytes" if plaintext.bytesize > limit
+
+        plaintext
+      end
+      private_class_method :format_profile
 
       def field_value(fields, field)
         if fields.key?(field)

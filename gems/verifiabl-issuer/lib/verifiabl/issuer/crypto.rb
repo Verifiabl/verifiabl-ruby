@@ -20,8 +20,14 @@ module Verifiabl
       # Encrypts formatted PII with AES-256-GCM and a fresh 96-bit IV.
       def encrypt(plaintext, key)
         validate!(plaintext, key)
+        encrypt_with_iv(plaintext, key, SecureRandom.random_bytes(IV_BYTES))
+      end
 
-        iv = SecureRandom.random_bytes(IV_BYTES)
+      # Deterministic test seam for shared cryptographic conformance vectors.
+      def encrypt_with_iv(plaintext, key, iv)
+        validate!(plaintext, key)
+        raise ArgumentError, "encryption IV must be exactly 12 bytes" unless iv.is_a?(String) && iv.bytesize == IV_BYTES
+
         cipher = OpenSSL::Cipher.new("aes-256-gcm").encrypt
         cipher.key = key
         cipher.iv = iv
@@ -35,6 +41,7 @@ module Verifiabl
           }.freeze
         )
       end
+      private_class_method :encrypt_with_iv
 
       def validate!(plaintext, key)
         raise ArgumentError, "plaintext must be a String" unless plaintext.is_a?(String)

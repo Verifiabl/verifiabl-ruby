@@ -4,7 +4,7 @@
     "generatedBy": "@verifiabl/sdks cross-SDK QR artifact generator v1",
     "source": {
       "package": "@verifiabl/issuer",
-      "version": "0.23.0"
+      "version": "0.25.0"
     },
     "tools": {
       "node": "v26.8.1",
@@ -47,15 +47,6 @@
     "errorCorrectionLevel": "Q",
     "qrVersion": 15,
     "modulePx": 6.23,
-    "degraded": false
-  },
-  "png-v1-default-720": {
-    "width": 720,
-    "height": 1125,
-    "content": "https://verify.verifiabl.io/v/u0FE9WLIS7GYKQnpJPygBw#1.Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Ab3Zz19-w",
-    "errorCorrectionLevel": "M",
-    "qrVersion": 13,
-    "modulePx": 10.43,
     "degraded": false
   }
 }

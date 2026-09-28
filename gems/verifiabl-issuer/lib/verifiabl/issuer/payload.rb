@@ -26,6 +26,7 @@ module Verifiabl
       }.freeze
 
       ScanUrlParts = Data.define(:content, :byte_prefix, :alphanumeric_ciphertext)
+      private_constant :ScanUrlParts
 
       module_function
 
