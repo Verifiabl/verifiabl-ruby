@@ -15,6 +15,7 @@ require_relative "issuer/qr"
 require_relative "issuer/rendering"
 require_relative "issuer/non_pii_v2"
 require_relative "issuer/serialization"
+require_relative "issuer/issuance"
 require_relative "issuer/version"
 
 module Verifiabl
@@ -30,6 +31,16 @@ module Verifiabl
 
       def format_new_zealand_pii(fields)
         Pii.format_new_zealand(fields)
+      end
+
+      def prepare_australian_v2_payslip(pii:, payslip_non_pii:, issued_at:, key:, verifiabl_reference: generate_verifiabl_reference)
+        Issuance.prepare({pii:, payslip_non_pii:, issued_at:, key:, reference: verifiabl_reference},
+          schema: AUSTRALIAN_PAYSLIP_V2_SCHEMA, formatter: :format_australian_pii)
+      end
+
+      def prepare_new_zealand_v2_payslip(pii:, payslip_non_pii:, issued_at:, key:, verifiabl_reference: generate_verifiabl_reference)
+        Issuance.prepare({pii:, payslip_non_pii:, issued_at:, key:, reference: verifiabl_reference},
+          schema: NEW_ZEALAND_PAYSLIP_V2_SCHEMA, formatter: :format_new_zealand_pii)
       end
 
       def encrypt_pii(plaintext, key)

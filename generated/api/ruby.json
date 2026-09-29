@@ -127,6 +127,28 @@
           }
         },
         {
+          "path": "Verifiabl::Issuer.prepare_australian_v2_payslip",
+          "name": "prepare_australian_v2_payslip",
+          "kind": "method",
+          "scope": "singleton",
+          "signature": "def self.prepare_australian_v2_payslip: (pii: australian_pii_fields, payslip_non_pii: Hash[Symbol | String, untyped], issued_at: String | Time, key: binary, ?verifiabl_reference: String) -> PreparedV2Payslip",
+          "documentation": {
+            "summary": "",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer.prepare_new_zealand_v2_payslip",
+          "name": "prepare_new_zealand_v2_payslip",
+          "kind": "method",
+          "scope": "singleton",
+          "signature": "def self.prepare_new_zealand_v2_payslip: (pii: new_zealand_pii_fields, payslip_non_pii: Hash[Symbol | String, untyped], issued_at: String | Time, key: binary, ?verifiabl_reference: String) -> PreparedV2Payslip",
+          "documentation": {
+            "summary": "",
+            "tags": []
+          }
+        },
+        {
           "path": "Verifiabl::Issuer::AUSTRALIAN_PAYSLIP_V2_SCHEMA",
           "name": "AUSTRALIAN_PAYSLIP_V2_SCHEMA",
           "kind": "constant",
@@ -283,7 +305,7 @@
               },
               {
                 "name": "param",
-                "text": "adapter called with `method:`, `url:`,\n`headers:`, `body:`, and `timeout:`. It must return an object with\n`status`, `headers`, and `body` readers.",
+                "text": "adapter called with `method:`, `url:`,\n`headers:`, `body:`, and `timeout:`. It must return an object with\n`status`, `headers`, and `body` readers. The adapter owns its own\nI/O timeouts and connection cleanup; it is not asynchronously interrupted.",
                 "subject": "transport",
                 "types": [
                   "#call",
@@ -557,6 +579,64 @@
       },
       "members": [],
       "superclass": "ApiError"
+    },
+    {
+      "path": "Verifiabl::Issuer::PreparedV2Payslip",
+      "name": "PreparedV2Payslip",
+      "kind": "class",
+      "parent": "Verifiabl::Issuer",
+      "documentation": {
+        "summary": "A single encryption and registration pair. Keep the reference and registration\ntogether for self-managed retries; the API-managed endpoint allocates its own.",
+        "tags": []
+      },
+      "members": [
+        {
+          "path": "Verifiabl::Issuer::PreparedV2Payslip#api_managed_registration",
+          "name": "api_managed_registration",
+          "kind": "method",
+          "scope": "instance",
+          "signature": "def api_managed_registration: () -> Hash[Symbol, untyped]",
+          "documentation": {
+            "summary": "",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer::PreparedV2Payslip#barcode_parts",
+          "name": "barcode_parts",
+          "kind": "method",
+          "scope": "instance",
+          "signature": "def barcode_parts: (String) -> Hash[Symbol, untyped]",
+          "documentation": {
+            "summary": "",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer::PreparedV2Payslip#registration",
+          "name": "registration",
+          "kind": "attribute",
+          "scope": "instance",
+          "access": "read",
+          "signature": "attr_reader registration: Hash[Symbol, untyped]",
+          "documentation": {
+            "summary": "A mutable, independent self-managed registration request.",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer::PreparedV2Payslip#verifiabl_reference",
+          "name": "verifiabl_reference",
+          "kind": "attribute",
+          "scope": "instance",
+          "access": "read",
+          "signature": "attr_reader verifiabl_reference: String",
+          "documentation": {
+            "summary": "Returns the value of attribute verifiabl_reference.",
+            "tags": []
+          }
+        }
+      ]
     },
     {
       "path": "Verifiabl::Issuer::Qr",

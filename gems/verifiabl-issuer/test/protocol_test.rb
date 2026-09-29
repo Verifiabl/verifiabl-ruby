@@ -141,6 +141,37 @@ class ProtocolTest < Minitest::Test
     assert_raises(RangeError) { Verifiabl::Issuer.format_australian_pii(employee_name: "a" * 1014) }
   end
 
+  def test_all_pii_formatters_report_the_same_field_validation_error
+    value = "Synthetic|Value"
+    %i[format_pii format_australian_pii format_new_zealand_pii].each do |formatter|
+      error = assert_raises(Verifiabl::Issuer::Pii::ValidationError) do
+        Verifiabl::Issuer.public_send(formatter, employee_name: value)
+      end
+      assert_equal [Verifiabl::Issuer::Pii::Violation.new(field: :employee_name, reason: :pipe)], error.violations
+      refute_includes error.message, value
+    end
+  end
+
+  def test_jurisdiction_address_errors_name_the_field_without_the_value
+    value = "Synthetic|Value"
+    profiles = {
+      format_australian_pii: %i[suburb state_or_territory postcode],
+      format_new_zealand_pii: %i[suburb city postcode]
+    }
+    profiles.each do |formatter, parts|
+      cases = parts.map { |part| [{part => value}, part] }
+      cases << [{lines: ["Valid line", value]}, :address]
+      cases.each do |address, field|
+        error = assert_raises(Verifiabl::Issuer::Pii::ValidationError) do
+          Verifiabl::Issuer.public_send(formatter, address: address)
+        end
+        assert_equal [Verifiabl::Issuer::Pii::Violation.new(field: field, reason: :pipe)], error.violations
+        assert_includes error.message, field.to_s
+        refute_includes error.message, value
+      end
+    end
+  end
+
   def test_publishes_v2_profile_metadata_and_currency_list
     assert_equal "io.verifiabl.au2-pii-text.v1", Verifiabl::Issuer::Pii::AUSTRALIAN_PROFILE_ID
     assert_equal "io.verifiabl.nz2-pii-text.v1", Verifiabl::Issuer::Pii::NEW_ZEALAND_PROFILE_ID

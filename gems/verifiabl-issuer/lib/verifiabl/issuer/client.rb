@@ -32,7 +32,8 @@ module Verifiabl
       # @param configuration [Configuration] client credentials and request settings
       # @param transport [#call, nil] adapter called with `method:`, `url:`,
       #   `headers:`, `body:`, and `timeout:`. It must return an object with
-      #   `status`, `headers`, and `body` readers.
+      #   `status`, `headers`, and `body` readers. The adapter owns its own
+      #   I/O timeouts and connection cleanup; it is not asynchronously interrupted.
       def initialize(configuration, transport: nil)
         configure_endpoints(configuration)
         configure_retry_policy(configuration)
@@ -91,9 +92,7 @@ module Verifiabl
 
       def post(path, body, idempotent:)
         deadline = @monotonic_clock.call + @timeout
-        Timeout.timeout(@timeout) { perform_post(path, JSON.generate(body), deadline, idempotent) }
-      rescue Timeout::Error
-        raise TimeoutError, @timeout
+        perform_post(path, JSON.generate(body), deadline, idempotent)
       end
 
       def perform_post(path, json, deadline, idempotent)
@@ -105,6 +104,8 @@ module Verifiabl
 
           attempt += 1
           sleep_before_retry(retry_delay(response, attempt), deadline)
+        rescue TimeoutError
+          raise
         rescue TransportError
           raise unless retry_transport?(attempt, deadline, idempotent)
 
@@ -126,7 +127,7 @@ module Verifiabl
         response = issuer_request(path, body, token, deadline)
         return response unless response.status == 401
 
-        invalidate_token(token)
+        invalidate_token(token, deadline)
         issuer_request(path, body, access_token(deadline), deadline)
       end
 
@@ -171,7 +172,7 @@ module Verifiabl
         return cached.value if cached && token_fresh?(cached, now)
 
         ensure_before_deadline!(deadline)
-        @token_mutex.synchronize do
+        with_token_lock(deadline) do
           ensure_before_deadline!(deadline)
           now = @clock.call
           return @token.value if @token && token_fresh?(@token, now)
@@ -181,9 +182,22 @@ module Verifiabl
         end
       end
 
-      def invalidate_token(rejected)
+      def invalidate_token(rejected, deadline)
         reset_token_cache_after_fork!
-        @token_mutex.synchronize { @token = nil if @token&.value == rejected }
+        with_token_lock(deadline) { @token = nil if @token&.value == rejected }
+      end
+
+      def with_token_lock(deadline)
+        until @token_mutex.try_lock
+          ensure_before_deadline!(deadline)
+          @sleeper.call([0.01, remaining_time(deadline)].min.clamp(0, 0.01))
+        end
+        begin
+          ensure_before_deadline!(deadline)
+          yield
+        ensure
+          @token_mutex.unlock
+        end
       end
 
       # Forking while another thread refreshes a token leaves the child with a
@@ -280,7 +294,11 @@ module Verifiabl
       def request(deadline:, **options)
         remaining = remaining_time(deadline)
         raise TimeoutError, @timeout unless remaining.positive?
-        Timeout.timeout(remaining) { @transport.call(**options.merge(timeout: remaining)) }
+        # Avoid Timeout.timeout: asynchronous interruption can corrupt adapter socket state.
+        # Adapters enforce I/O timeouts; the deadline is checked between operations.
+        response = @transport.call(**options.merge(timeout: remaining))
+        ensure_before_deadline!(deadline)
+        response
       rescue AuthError, ApiError, TransportError
         raise
       rescue Timeout::Error

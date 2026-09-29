@@ -39,22 +39,19 @@ issuer = Verifiabl::Issuer::Client.new(
 provider_encryption_key = Base64.strict_decode64(
   ENV.fetch("VERIFIABL_ENCRYPTION_KEY_BASE64")
 )
-plaintext = Verifiabl::Issuer.format_australian_pii(PAYSLIP.fetch(:pii))
-
-encrypted = Verifiabl::Issuer.encrypt_pii(plaintext, provider_encryption_key)
-
-registration = {
-  schema: Verifiabl::Issuer::AUSTRALIAN_PAYSLIP_V2_SCHEMA,
-  issued_at: Time.now.utc,
+prepared = Verifiabl::Issuer.prepare_australian_v2_payslip(
+  pii: PAYSLIP.fetch(:pii),
   payslip_non_pii: PAYSLIP.fetch(:non_pii),
-  encryption_metadata: encrypted.encryption_metadata
-}
-
-result = issuer.register_non_pii(**registration)
+  issued_at: Time.now.utc,
+  key: provider_encryption_key
+)
+# Persist prepared.registration and the binary ciphertext from
+# prepared.barcode_parts(prepared.verifiabl_reference).fetch(:encrypted_pii)
+# atomically before sending. Reuse both after a process restart.
+result = issuer.register_non_pii(**prepared.registration)
 
 barcode = Verifiabl::Issuer.build_barcode_svg(
-  verifiabl_reference: result.verifiabl_reference,
-  encrypted_pii: encrypted.encrypted_pii,
+  **prepared.barcode_parts(result.verifiabl_reference),
   environment: :sandbox
 )
 

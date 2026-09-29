@@ -2,16 +2,17 @@
 
 These examples demonstrate the two alternative barcode flows: self-managed with a fictional
 Australian v2 payslip (AU2), and API-managed with a fictional New Zealand v2 payslip (NZ2).
-Each pairs its jurisdictional PII formatter with the matching non-PII schema and uses labelled
-non-PII fields and exact decimal payslip numbers. Both format and encrypt PII locally and
-register only the non-PII fields as payslip data. They support Ruby 3.3 and newer.
+Each uses the jurisdiction-specific v2 preparation helper to select the matching
+formatter and schema. Both validate non-PII fields and encrypt PII locally.
+The API-managed flow also sends ciphertext for barcode rendering. Neither flow
+sends plaintext PII. They support Ruby 3.3 and newer.
 
 ## Setup
 
 Install the release candidate from RubyGems:
 
 ```sh
-gem install verifiabl-issuer --version 0.1.0-rc.4
+gem install verifiabl-issuer --version 0.1.0-rc.5
 cd examples/issuer/basic
 bundle install
 ```
