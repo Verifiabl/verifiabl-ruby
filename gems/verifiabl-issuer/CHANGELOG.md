@@ -4,6 +4,16 @@ All notable changes to the Verifiabl Ruby SDK will be documented in this file.
 
 ## Unreleased
 
+## [0.1.0-rc.5] - 2026-09-29
+
+- Add `prepare_australian_v2_payslip` and `prepare_new_zealand_v2_payslip`
+  to keep each jurisdiction's PII profile, v2 registration and encrypted
+  ciphertext together. Prepared registration and barcode outputs are independent
+  copies; API-managed requests omit the caller reference.
+- Use remaining-budget I/O timeouts and deadline-aware token-lock waits instead
+  of asynchronously interrupting HTTP transports. Built-in Net::HTTP I/O
+  timeouts are per operation, not a strict end-to-end wall-clock limit.
+
 ## [0.1.0-rc.4] - 2026-09-28
 
 - **Breaking:** AU2 and NZ2 amounts, rates and quantities are now plain decimal Strings, for

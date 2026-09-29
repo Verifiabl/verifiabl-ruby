@@ -9,7 +9,7 @@ client, RBS signatures, and packed-gem consumer qualification.
 The current release is a release candidate. Add its exact version to your bundle:
 
 ```ruby
-gem "verifiabl-issuer", "0.1.0-rc.4"
+gem "verifiabl-issuer", "0.1.0-rc.5"
 ```
 
 Then run `bundle install`. Keep the exact version until a stable release is available.
@@ -55,8 +55,15 @@ Set `on_request`, `on_response`, and `on_error` on `Configuration` when request 
 Events contain request metadata but never request bodies, credentials, or payslip data. Observer
 failures do not change request behavior.
 
-The default overall deadline is 30 seconds and includes OAuth, 401 refresh, retry attempts, and
-backoff. The Verifiabl reference is the idempotency key. `register_non_pii` generates and sends one
+The default timeout budget is 30 seconds across OAuth, token-lock waits, 401 refresh, retries,
+and backoff. Lock waits are bounded, and the budget is checked between operations. The built-in
+Net::HTTP transport applies the remaining budget to open, read, and write timeouts, but those are
+per-I/O inactivity timeouts, **not a hard wall-clock limit**: DNS or a response that keeps sending
+bytes can outlast the budget. A completed request that returns after the deadline raises
+`TimeoutError`; blocking custom adapters can also exceed it. The SDK does not use
+`Timeout.timeout`, which can asynchronously interrupt sockets and corrupt persistent connections.
+
+The Verifiabl reference is the idempotency key. `register_non_pii` generates and sends one
 when omitted, so it and batch registration can safely retry transport failures, 408s, 429s, and 5xx
 responses. API-managed barcode registration uses a server-generated reference and retries only 429,
 which is rejected before processing. Configure these limits when needed:
@@ -74,16 +81,67 @@ issuer = Verifiabl::Issuer::Client.new(configuration)
 Endpoint overrides are intended only for development. Issuer overrides require HTTPS except for
 loopback HTTP. OAuth overrides are restricted to Verifiabl auth hosts or loopback addresses.
 
+## Connection reuse and custom transports
+
+The default transport opens and closes a TCP/TLS connection for each request. For high-volume
+batch issuing, supply `transport:` to avoid repeated handshakes. No pooling dependency is installed
+by default. For example, add `gem "net-http-persistent", "~> 4.0"` to your application's Gemfile.
+Like the built-in transport, this example uses per-I/O timeouts and **does not enforce a total
+wall-clock deadline**:
+
+```ruby
+require "net/http/persistent"
+
+# Create one adapter/client per worker, after forking. This example is sequential:
+# do not share it across threads because timeout settings are mutable.
+http = Net::HTTP::Persistent.new(name: "verifiabl-issuer")
+http.max_retries = 0 # Leave retry/idempotency decisions to the SDK.
+transport = lambda do |method:, url:, headers:, body:, timeout:|
+  raise ArgumentError, "unsupported method" unless method == :post
+
+  http.open_timeout = timeout
+  http.read_timeout = timeout
+  http.write_timeout = timeout
+  uri = URI.parse(url)
+  request = Net::HTTP::Post.new(uri, headers)
+  request.body = body
+  response = http.request(uri, request)
+  Verifiabl::Issuer::Client::Response.new(
+    status: response.code.to_i,
+    headers: response.each_header.to_h,
+    body: response.body.to_s
+  )
+end
+issuer = Verifiabl::Issuer::Client.new(configuration, transport: transport)
+begin
+  # Use issuer.register_non_pii(...) or issuer.register_non_pii_batch(...).
+ensure
+  http.shutdown
+end
+```
+
+The adapter receives `method:`, `url:`, `headers:`, `body:` (serialized JSON), and `timeout:`
+(remaining seconds), for both OAuth and issuer requests. Return an object with integer `status`,
+`headers` (prefer lowercase keys), and string `body` readers. Adapters own their I/O and
+pool-acquisition timeouts, failed-connection cleanup, and must not retry non-idempotent calls.
+For a **strict total deadline**, bring an adapter that bounds DNS, pool waits, TLS, writes, headers,
+and the complete body by the remaining `timeout:` budget (including trickling responses). The SDK
+cannot forcibly interrupt arbitrary blocking adapter code. Native `Timeout::Error` subclasses
+become SDK `TimeoutError`; socket/I/O failures become SDK errors. The application owns adapter
+shutdown, thread safety, and post-fork recreation.
+
 ## Issue payslips
 
-Choose one barcode flow for each payslip. Do not call both registration methods for the same
-issuance.
+For new AU/NZ v2 integrations, prepare the payslip once with its jurisdiction-specific helper. The helper selects the schema and PII formatter, validates non-PII fields with the SDK's existing rules, and encrypts locally. Choose one barcode flow for each payslip. Do not call both registration methods for the same issuance.
 
 ### AU2 and NZ2 payslip profiles
 
-Use `format_australian_pii` with `au.payslip.v2`. The formatter accepts employer name and ABN
-separately, then writes the ABN when present or falls back to the name. Structured address
-components collapse into the profile's single address display field.
+Use `prepare_australian_v2_payslip` for Australian records or
+`prepare_new_zealand_v2_payslip` for New Zealand records. Each selects the
+matching v2 schema and PII formatter internally. The AU2 formatter accepts
+employer name and ABN separately, then writes the ABN when present or falls
+back to the name. Structured address components collapse into one address
+display field.
 
 ```ruby
 require "base64"
@@ -91,38 +149,35 @@ require "base64"
 provider_encryption_key = Base64.strict_decode64(
   ENV.fetch("VERIFIABL_ENCRYPTION_KEY_BASE64")
 )
-plaintext = Verifiabl::Issuer.format_australian_pii(
-  employee_name: "Jane A. Doe",
-  employer_name: "Example Payroll Pty Ltd",
-  employer_abn: "12 345 678 901",
-  bsb: "062-000",
-  account_number: "****5678",
-  account_name: "Jane A Doe",
-  address: {
-    lines: ["A204/11-17 Eve Street"],
-    suburb: "Erskineville",
-    state_or_territory: "NSW",
-    postcode: "2043"
-  }
-)
-encrypted = Verifiabl::Issuer.encrypt_pii(plaintext, provider_encryption_key)
-
-registration = issuer.register_non_pii(
-  schema: Verifiabl::Issuer::AUSTRALIAN_PAYSLIP_V2_SCHEMA,
-  issued_at: Time.now.utc,
-  payslip_non_pii: {
-    period_end: "2026-05-31",
-    payment_date: "2026-06-04",
-    currency: "AUD",
-    gross: "8125.00",
-    paygw: "2030.00",
-    net: "6095.00"
+prepared = Verifiabl::Issuer.prepare_australian_v2_payslip(
+  pii: {
+    employee_name: "Jane A. Doe",
+    employer_name: "Example Payroll Pty Ltd",
+    employer_abn: "12 345 678 901",
+    address: {lines: ["A204/11-17 Eve Street"], suburb: "Erskineville", state_or_territory: "NSW", postcode: "2043"}
   },
-  encryption_metadata: encrypted.encryption_metadata
+  payslip_non_pii: {
+    period_end: "2026-05-31", payment_date: "2026-06-04", currency: "AUD",
+    gross: "8125.00", paygw: "2030.00", net: "6095.00"
+  },
+  issued_at: Time.now.utc,
+  key: provider_encryption_key
+)
+# Persist the registration and ciphertext together before sending (binary columns).
+saved_registration = prepared.registration
+saved_ciphertext = prepared.barcode_parts(prepared.verifiabl_reference).fetch(:encrypted_pii)
+# Persist saved_registration and saved_ciphertext atomically. The registration
+# has the reference, IV and tag, but not the ciphertext.
+registration = issuer.register_non_pii(**saved_registration)
+# After a restart, resend saved_registration unchanged and render from saved_ciphertext.
+barcode = Verifiabl::Issuer.build_barcode_svg(
+  verifiabl_reference: registration.verifiabl_reference,
+  encrypted_pii: saved_ciphertext, environment: :sandbox
 )
 ```
 
-For `nz.payslip.v2`, use `format_new_zealand_pii`. NZ2 carries the printed employee IRD number,
+For NZ, pass the `ird_number` and the printed employer and bank details in the
+NZ helper's `pii:` input. NZ2 carries the printed employee IRD number,
 employer name, account number and account name. It has no BSB or NZBN field.
 
 Both formatters always write eight positions, including empty trailing fields. AU addresses render
@@ -130,14 +185,13 @@ as address lines followed by `suburb state postcode`; NZ addresses render as add
 suburb, then `city postcode`. Country is implicit. The complete UTF-8 plaintext is limited to 1024
 bytes.
 
-`schema:` selects only the non-PII payload contract. Choose the PII formatter separately:
-`format_australian_pii` (AU2) for Australian records or `format_new_zealand_pii` (NZ2) for New
-Zealand records. Today the examples use AU2 with `au.payslip.v2` and NZ2 with `nz.payslip.v2`,
-but those matching `2` suffixes are not a version-coupling rule. A future non-PII schema can still
-use the same jurisdictional PII format, or the PII format can evolve without renaming the non-PII
-schema. The verifier checks the PII marker against the record's jurisdiction, not the schema
-version; a jurisdiction mismatch fails verification. Legacy v1 verification returns this plaintext
-without parsing it.
+The preparation helpers pair the AU2/NZ2 PII format with the matching v2
+non-PII schema. Their input does not accept a schema, formatted plaintext, or
+ciphertext. They do not check whether input values describe a real payslip or
+whether printed non-PII strings contain personal information. Keep employee
+PII out of non-PII fields. Advanced integrations can still select the schema
+and formatter separately with the low-level APIs. PII format and non-PII
+schema versions are independent; legacy v1 verification remains supported.
 
 Every AU2 and NZ2 amount, rate and quantity is a plain decimal `String`, for example `"1234.56"`,
 `"-25.00"` or `"47.3684"`: an optional leading `-`, digits, and an optional `.` followed by digits.
@@ -197,22 +251,19 @@ issuer = Verifiabl::Issuer::Client.new(
 provider_encryption_key = Base64.strict_decode64(
   ENV.fetch("VERIFIABL_ENCRYPTION_KEY_BASE64")
 )
-plaintext = Verifiabl::Issuer.format_australian_pii(PAYSLIP.fetch(:pii))
-
-encrypted = Verifiabl::Issuer.encrypt_pii(plaintext, provider_encryption_key)
-
-registration = {
-  schema: Verifiabl::Issuer::AUSTRALIAN_PAYSLIP_V2_SCHEMA,
-  issued_at: Time.now.utc,
+prepared = Verifiabl::Issuer.prepare_australian_v2_payslip(
+  pii: PAYSLIP.fetch(:pii),
   payslip_non_pii: PAYSLIP.fetch(:non_pii),
-  encryption_metadata: encrypted.encryption_metadata
-}
-
-result = issuer.register_non_pii(**registration)
+  issued_at: Time.now.utc,
+  key: provider_encryption_key
+)
+# Persist prepared.registration and the binary ciphertext from
+# prepared.barcode_parts(prepared.verifiabl_reference).fetch(:encrypted_pii)
+# atomically before sending. Reuse both after a process restart.
+result = issuer.register_non_pii(**prepared.registration)
 
 barcode = Verifiabl::Issuer.build_barcode_svg(
-  verifiabl_reference: result.verifiabl_reference,
-  encrypted_pii: encrypted.encrypted_pii,
+  **prepared.barcode_parts(result.verifiabl_reference),
   environment: :sandbox
 )
 
@@ -275,21 +326,15 @@ issuer = Verifiabl::Issuer::Client.new(
 provider_encryption_key = Base64.strict_decode64(
   ENV.fetch("VERIFIABL_ENCRYPTION_KEY_BASE64")
 )
-plaintext = Verifiabl::Issuer.format_new_zealand_pii(PAYSLIP.fetch(:pii))
-
-encrypted = Verifiabl::Issuer.encrypt_pii(plaintext, provider_encryption_key)
-
-registration = {
-  schema: Verifiabl::Issuer::NEW_ZEALAND_PAYSLIP_V2_SCHEMA,
-  issued_at: Time.now.utc,
+prepared = Verifiabl::Issuer.prepare_new_zealand_v2_payslip(
+  pii: PAYSLIP.fetch(:pii),
   payslip_non_pii: PAYSLIP.fetch(:non_pii),
-  encryption_metadata: encrypted.encryption_metadata
-}
-
-result = issuer.register_and_build_barcode(
-  encrypted_pii: encrypted.encrypted_pii,
-  **registration
+  issued_at: Time.now.utc,
+  key: provider_encryption_key
 )
+# API-managed registration allocates its own reference. Do not replay an
+# ambiguous failure as if prepared.verifiabl_reference were its idempotency key.
+result = issuer.register_and_build_barcode(**prepared.api_managed_registration)
 
 output_path = File.expand_path("output/api-managed-barcode.png", __dir__)
 FileUtils.mkdir_p(File.dirname(output_path))
@@ -306,28 +351,43 @@ PII is never sent in either flow.
 
 ### Retries and batches
 
-For a self-managed registration that must remain retryable across process restarts, generate and
-persist the reference before the first call, then reuse it on every attempt:
+For a self-managed registration that must remain retryable across process
+restarts, persist `prepared.registration` and the binary ciphertext from
+`prepared.barcode_parts(prepared.verifiabl_reference).fetch(:encrypted_pii)`
+together before the first call. The registration includes the reference, IV and
+tag but not the ciphertext. Reuse the *same* registration for a later attempt,
+then render from the saved ciphertext and the returned reference. You can pass `verifiabl_reference:` to the preparation helper if your
+system already allocated one. Do not prepare and encrypt again for an
+idempotent replay. The API-managed request does not include this reference.
+
+For pay runs, prepare each record with the matching jurisdiction helper. Pass
+its `registration` hash to batch registration with an optional `external_id`.
+Use each prepared result's `barcode_parts` with the corresponding batch result:
 
 ```ruby
-reference = Verifiabl::Issuer.generate_verifiabl_reference
-persist_with_issuance_record(reference)
-result = issuer.register_non_pii(
-  verifiabl_reference: reference,
-  **registration
-)
-```
-
-For pay runs, register up to 1,000 self-managed records in one request:
-
-```ruby
-batch = issuer.register_non_pii_batch(records)
-batch.results.each do |item|
-  case item.status
-  when "created", "duplicate"
-    puts item.verifiabl_reference
-  when "error"
-    warn "#{item.external_id}: #{item.code} #{item.detail}"
+prepared = payslips.map do |payslip|
+  if payslip.fetch(:country) == "AU"
+    Verifiabl::Issuer.prepare_australian_v2_payslip(
+      pii: payslip.fetch(:pii), payslip_non_pii: payslip.fetch(:non_pii),
+      issued_at: Time.now.utc, key: provider_encryption_key
+    )
+  else
+    Verifiabl::Issuer.prepare_new_zealand_v2_payslip(
+      pii: payslip.fetch(:pii), payslip_non_pii: payslip.fetch(:non_pii),
+      issued_at: Time.now.utc, key: provider_encryption_key
+    )
+  end
+end
+# Persist each prepared reference, registration, and ciphertext before sending.
+batch = issuer.register_non_pii_batch(prepared.each_with_index.map do |item, index|
+  item.registration.merge(external_id: payslips.fetch(index).fetch(:external_id))
+end)
+batch.results.each_with_index do |item, index|
+  if %w[created duplicate].include?(item.status)
+    parts = prepared.fetch(index).barcode_parts(item.verifiabl_reference)
+    # Render this record's barcode from parts.
+  else
+    # Handle item.code; do not parse item.detail.
   end
 end
 ```

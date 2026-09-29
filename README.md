@@ -14,6 +14,17 @@ See the issuer gem's [README](./gems/verifiabl-issuer/README.md) for installatio
 
 Issuer examples are under [`examples/issuer`](./examples/issuer).
 
+The recommended v2 path is `Verifiabl::Issuer.prepare_australian_v2_payslip` or
+`prepare_new_zealand_v2_payslip`. Each validates the jurisdiction's non-PII
+fields, formats matching PII and encrypts locally. Send `prepared.registration`
+to `register_non_pii` (or use it as a batch record), then render with
+`prepared.barcode_parts(result.verifiabl_reference)`. Alternatively send
+`prepared.api_managed_registration` to `register_and_build_barcode`. See
+[`examples/issuer/prepare_v2.rb`](examples/issuer/prepare_v2.rb). Persist the
+self-managed reference and registration for retries; the API-managed endpoint
+allocates its own reference and cannot deduplicate ambiguous failures. Never
+log or persist plaintext. Existing low-level APIs remain available.
+
 ## Development
 
 ```sh

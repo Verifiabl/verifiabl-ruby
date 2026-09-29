@@ -43,12 +43,21 @@ module Verifiabl
     def self.format_pii: (Hash[Symbol | String, String?]) -> String
     def self.format_australian_pii: (australian_pii_fields) -> String
     def self.format_new_zealand_pii: (new_zealand_pii_fields) -> String
+    def self.prepare_australian_v2_payslip: (pii: australian_pii_fields, payslip_non_pii: Hash[Symbol | String, untyped], issued_at: String | Time, key: binary, ?verifiabl_reference: String) -> PreparedV2Payslip
+    def self.prepare_new_zealand_v2_payslip: (pii: new_zealand_pii_fields, payslip_non_pii: Hash[Symbol | String, untyped], issued_at: String | Time, key: binary, ?verifiabl_reference: String) -> PreparedV2Payslip
     def self.encrypt_pii: (String, binary) -> Crypto::EncryptedPii
     def self.generate_verifiabl_reference: () -> String
     def self.build_barcode_payload: (verifiabl_reference: String, encrypted_pii: binary) -> String
     def self.build_scan_url: (verifiabl_reference: String, encrypted_pii: binary, ?environment: Symbol | String, ?scan_base_url: String?) -> String
     def self.build_barcode_svg: (verifiabl_reference: String, encrypted_pii: binary, ?width: Numeric, ?environment: Symbol | String, ?scan_base_url: String?, ?max_error_correction: Symbol | String, ?error_correction_level: Symbol | String) -> Rendering::SvgResult
     def self.build_barcode_png: (verifiabl_reference: String, encrypted_pii: binary, ?width: Integer, ?environment: Symbol | String, ?scan_base_url: String?, ?max_error_correction: Symbol | String, ?error_correction_level: Symbol | String, ?compression_level: Integer) -> Rendering::PngResult
+
+    class PreparedV2Payslip
+      attr_reader verifiabl_reference: String
+      attr_reader registration: Hash[Symbol, untyped]
+      def api_managed_registration: () -> Hash[Symbol, untyped]
+      def barcode_parts: (String) -> Hash[Symbol, untyped]
+    end
 
     class Configuration
       attr_reader client_id: String?

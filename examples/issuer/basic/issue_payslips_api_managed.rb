@@ -38,21 +38,15 @@ issuer = Verifiabl::Issuer::Client.new(
 provider_encryption_key = Base64.strict_decode64(
   ENV.fetch("VERIFIABL_ENCRYPTION_KEY_BASE64")
 )
-plaintext = Verifiabl::Issuer.format_new_zealand_pii(PAYSLIP.fetch(:pii))
-
-encrypted = Verifiabl::Issuer.encrypt_pii(plaintext, provider_encryption_key)
-
-registration = {
-  schema: Verifiabl::Issuer::NEW_ZEALAND_PAYSLIP_V2_SCHEMA,
-  issued_at: Time.now.utc,
+prepared = Verifiabl::Issuer.prepare_new_zealand_v2_payslip(
+  pii: PAYSLIP.fetch(:pii),
   payslip_non_pii: PAYSLIP.fetch(:non_pii),
-  encryption_metadata: encrypted.encryption_metadata
-}
-
-result = issuer.register_and_build_barcode(
-  encrypted_pii: encrypted.encrypted_pii,
-  **registration
+  issued_at: Time.now.utc,
+  key: provider_encryption_key
 )
+# API-managed registration allocates its own reference. Do not replay an
+# ambiguous failure as if prepared.verifiabl_reference were its idempotency key.
+result = issuer.register_and_build_barcode(**prepared.api_managed_registration)
 
 output_path = File.expand_path("output/api-managed-barcode.png", __dir__)
 FileUtils.mkdir_p(File.dirname(output_path))

@@ -375,6 +375,84 @@ class ClientTest < Minitest::Test
     end
   end
 
+  def test_transport_receives_remaining_budget_without_async_timeout
+    elapsed = 0.0
+    budgets = []
+    client = build_client(lambda do |**request|
+      budgets << request.fetch(:timeout)
+      elapsed += 2
+      if request.fetch(:url).include?("/oauth/token")
+        response(200, access_token: "token", expires_in: 3600)
+      else
+        response(200, verifiabl_reference: "AbCdEfGhIjKlMnOpQrStUv")
+      end
+    end, timeout: 10, monotonic_clock: -> { elapsed })
+
+    trace = TracePoint.new(:call) do |event|
+      flunk "must not asynchronously interrupt transport" if event.self == Timeout && event.method_id == :timeout
+    end
+    trace.enable do
+      client.register_non_pii(verifiabl_reference: "AbCdEfGhIjKlMnOpQrStUv", **registration)
+    end
+    assert_equal [10, 8], budgets
+  end
+
+  def test_rejects_response_arriving_after_deadline
+    elapsed = 0.0
+    calls = 0
+    client = build_client(lambda do |**request|
+      calls += 1
+      if request.fetch(:url).include?("/oauth/token")
+        response(200, access_token: "token", expires_in: 3600)
+      else
+        elapsed = 11
+        response(200, verifiabl_reference: "AbCdEfGhIjKlMnOpQrStUv")
+      end
+    end, timeout: 10, monotonic_clock: -> { elapsed })
+
+    assert_raises(Verifiabl::Issuer::TimeoutError) { client.register_non_pii(**registration) }
+    assert_equal 2, calls
+  end
+
+  def test_native_io_timeouts_are_mapped_without_retry
+    [Net::OpenTimeout, Net::ReadTimeout, Net::WriteTimeout].each do |error_class|
+      [true, false].each do |during_auth|
+        calls = 0
+        client = build_client(lambda do |**request|
+          calls += 1
+          raise error_class if during_auth || !request.fetch(:url).include?("/oauth/token")
+          response(200, access_token: "token", expires_in: 3600)
+        end)
+
+        assert_raises(Verifiabl::Issuer::TimeoutError) { client.register_non_pii(**registration) }
+        assert_equal(during_auth ? 1 : 2, calls)
+      end
+    end
+  end
+
+  def test_token_refresh_and_invalidation_lock_waits_observe_caller_deadline
+    [:access_token, :invalidate_token].each do |operation|
+      elapsed = 0.0
+      client = build_client(->(**) { flunk "must not request while waiting for token lock" },
+        timeout: 0.05, monotonic_clock: -> { elapsed }, sleeper: ->(seconds) { elapsed += seconds })
+      mutex = client.instance_variable_get(:@token_mutex)
+      mutex.lock
+      begin
+        assert_raises(Verifiabl::Issuer::TimeoutError) do
+          if operation == :access_token
+            client.send(:access_token, 0.05)
+          else
+            client.send(:invalidate_token, "token", 0.05)
+          end
+        end
+        assert_operator elapsed, :>=, 0.05
+      ensure
+        mutex.unlock
+      end
+      refute mutex.locked?
+    end
+  end
+
   def test_concurrent_calls_single_flight_token_refresh
     mutex = Mutex.new
     ready = ConditionVariable.new
