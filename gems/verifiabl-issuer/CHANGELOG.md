@@ -4,6 +4,14 @@ All notable changes to the Verifiabl Ruby SDK will be documented in this file.
 
 ## Unreleased
 
+## [0.1.0] - 2026-09-30
+
+- First stable release of the Ruby issuer SDK. Keep the AU/NZ v2 preparation
+  helpers, registration and QR rendering behaviour from the release candidates.
+- Clarify that the verifier currently interprets AU2 and NZ2 as structured PII
+  only for `au.payslip.v2` and `nz.payslip.v2`. Future non-PII schemas need an
+  explicit verifier reader update before issuance.
+
 ## [0.1.0-rc.5] - 2026-09-29
 
 - Add `prepare_australian_v2_payslip` and `prepare_new_zealand_v2_payslip`

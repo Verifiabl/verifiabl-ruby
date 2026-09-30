@@ -5,6 +5,23 @@ module Verifiabl
     NEW_ZEALAND_PAYSLIP_V2_SCHEMA: String
     SUPPORTED_V2_CURRENCIES: Array[String]
 
+    module PayslipCodes
+      module Australian
+        EARNINGS_TYPES: Array[String]
+        PAID_LEAVE_TYPES: Array[String]
+        ALLOWANCE_TYPES: Array[String]
+        OTHER_ALLOWANCE_CATEGORIES: Array[String]
+        PAY_FREQUENCIES: Array[String]
+      end
+
+      module NewZealand
+        EARNINGS_TYPES: Array[String]
+        PAID_LEAVE_TYPES: Array[String]
+        ALLOWANCE_TYPES: Array[String]
+        LEAVE_BALANCE_UNITS: Array[String]
+      end
+    end
+
     type binary = String
     type australian_address = {
       ?lines: Array[String]?,

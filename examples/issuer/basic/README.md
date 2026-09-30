@@ -9,10 +9,10 @@ sends plaintext PII. They support Ruby 3.3 and newer.
 
 ## Setup
 
-Install the release candidate from RubyGems:
+After the stable 0.1.0 release is published, install it from RubyGems:
 
 ```sh
-gem install verifiabl-issuer --version 0.1.0-rc.5
+gem install verifiabl-issuer --version 0.1.0
 cd examples/issuer/basic
 bundle install
 ```
