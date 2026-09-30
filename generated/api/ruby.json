@@ -581,6 +581,131 @@
       "superclass": "ApiError"
     },
     {
+      "path": "Verifiabl::Issuer::PayslipCodes",
+      "name": "PayslipCodes",
+      "kind": "module",
+      "parent": "Verifiabl::Issuer",
+      "documentation": {
+        "summary": "",
+        "tags": []
+      },
+      "members": []
+    },
+    {
+      "path": "Verifiabl::Issuer::PayslipCodes::Australian",
+      "name": "Australian",
+      "kind": "module",
+      "parent": "Verifiabl::Issuer::PayslipCodes",
+      "documentation": {
+        "summary": "",
+        "tags": []
+      },
+      "members": [
+        {
+          "path": "Verifiabl::Issuer::PayslipCodes::Australian::ALLOWANCE_TYPES",
+          "name": "ALLOWANCE_TYPES",
+          "kind": "constant",
+          "signature": "ALLOWANCE_TYPES: Array[String]",
+          "documentation": {
+            "summary": "",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer::PayslipCodes::Australian::EARNINGS_TYPES",
+          "name": "EARNINGS_TYPES",
+          "kind": "constant",
+          "signature": "EARNINGS_TYPES: Array[String]",
+          "documentation": {
+            "summary": "",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer::PayslipCodes::Australian::OTHER_ALLOWANCE_CATEGORIES",
+          "name": "OTHER_ALLOWANCE_CATEGORIES",
+          "kind": "constant",
+          "signature": "OTHER_ALLOWANCE_CATEGORIES: Array[String]",
+          "documentation": {
+            "summary": "",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer::PayslipCodes::Australian::PAID_LEAVE_TYPES",
+          "name": "PAID_LEAVE_TYPES",
+          "kind": "constant",
+          "signature": "PAID_LEAVE_TYPES: Array[String]",
+          "documentation": {
+            "summary": "",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer::PayslipCodes::Australian::PAY_FREQUENCIES",
+          "name": "PAY_FREQUENCIES",
+          "kind": "constant",
+          "signature": "PAY_FREQUENCIES: Array[String]",
+          "documentation": {
+            "summary": "",
+            "tags": []
+          }
+        }
+      ]
+    },
+    {
+      "path": "Verifiabl::Issuer::PayslipCodes::NewZealand",
+      "name": "NewZealand",
+      "kind": "module",
+      "parent": "Verifiabl::Issuer::PayslipCodes",
+      "documentation": {
+        "summary": "",
+        "tags": []
+      },
+      "members": [
+        {
+          "path": "Verifiabl::Issuer::PayslipCodes::NewZealand::ALLOWANCE_TYPES",
+          "name": "ALLOWANCE_TYPES",
+          "kind": "constant",
+          "signature": "ALLOWANCE_TYPES: Array[String]",
+          "documentation": {
+            "summary": "",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer::PayslipCodes::NewZealand::EARNINGS_TYPES",
+          "name": "EARNINGS_TYPES",
+          "kind": "constant",
+          "signature": "EARNINGS_TYPES: Array[String]",
+          "documentation": {
+            "summary": "",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer::PayslipCodes::NewZealand::LEAVE_BALANCE_UNITS",
+          "name": "LEAVE_BALANCE_UNITS",
+          "kind": "constant",
+          "signature": "LEAVE_BALANCE_UNITS: Array[String]",
+          "documentation": {
+            "summary": "",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer::PayslipCodes::NewZealand::PAID_LEAVE_TYPES",
+          "name": "PAID_LEAVE_TYPES",
+          "kind": "constant",
+          "signature": "PAID_LEAVE_TYPES: Array[String]",
+          "documentation": {
+            "summary": "",
+            "tags": []
+          }
+        }
+      ]
+    },
+    {
       "path": "Verifiabl::Issuer::PreparedV2Payslip",
       "name": "PreparedV2Payslip",
       "kind": "class",

@@ -34,6 +34,10 @@ Dir.mktmpdir("verifiabl-packed-gem-") do |directory|
       require "verifiabl/issuer"
       abort "wrong namespace" unless defined?(Verifiabl::Issuer::Client)
       abort "missing QR dependency" unless defined?(RQRCodeCore::QRCode)
+      au = Verifiabl::Issuer::PayslipCodes::Australian
+      nz = Verifiabl::Issuer::PayslipCodes::NewZealand
+      abort "missing AU code lists" unless au::PAY_FREQUENCIES.include?("monthly") && au::EARNINGS_TYPES.include?("allowance")
+      abort "missing NZ code lists" unless nz::LEAVE_BALANCE_UNITS.include?("hours") && nz::PAID_LEAVE_TYPES.include?("annual_holiday")
       reference = Verifiabl::Issuer.generate_verifiabl_reference
       valid_reference = reference.length == 22 && reference.chars.all? { |character| "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-".include?(character) }
       abort "invalid reference" unless valid_reference

@@ -6,13 +6,13 @@ client, RBS signatures, and packed-gem consumer qualification.
 
 ## Installation
 
-The current release is a release candidate. Add its exact version to your bundle:
+Add the stable release to your bundle:
 
 ```ruby
-gem "verifiabl-issuer", "0.1.0-rc.5"
+gem "verifiabl-issuer", "0.1.0"
 ```
 
-Then run `bundle install`. Keep the exact version until a stable release is available.
+Then run `bundle install`.
 
 Bundler loads the gem through its package-name entry point:
 
@@ -192,6 +192,10 @@ whether printed non-PII strings contain personal information. Keep employee
 PII out of non-PII fields. Advanced integrations can still select the schema
 and formatter separately with the low-level APIs. PII format and non-PII
 schema versions are independent; legacy v1 verification remains supported.
+The verifier currently interprets AU2 only for `au.payslip.v2` and NZ2 only
+for `nz.payslip.v2`. Future non-PII schemas need an explicit verifier reader
+mapping before reusing either PII format; an unknown schema falls back to raw
+PII text rather than structured fields.
 
 Every AU2 and NZ2 amount, rate and quantity is a plain decimal `String`, for example `"1234.56"`,
 `"-25.00"` or `"47.3684"`: an optional leading `-`, digits, and an optional `.` followed by digits.
@@ -202,6 +206,24 @@ optional for AU2 and NZ2. `currency` is required and must be a current ISO 4217 
 `XAU` or `XXX`, are not accepted, because wages are paid in legal tender. The SDK also rejects unlisted fields (including
 nested fields) before transport to avoid sending accidental PII; the API validates the remaining
 payslip rules.
+
+For common fixed AU/NZ v2 fields, use the frozen discovery lists in
+`Verifiabl::Issuer::PayslipCodes`. The lists are scoped by jurisdiction and
+contain the known codes, including the earnings discriminators:
+
+```ruby
+au = Verifiabl::Issuer::PayslipCodes::Australian
+nz = Verifiabl::Issuer::PayslipCodes::NewZealand
+au::PAY_FREQUENCIES # => ["weekly", "fortnightly", "monthly", "quarterly"]
+au::OTHER_ALLOWANCE_CATEGORIES.include?("home_office") # => true
+nz::LEAVE_BALANCE_UNITS # => ["hours", "days", "weeks"]
+```
+
+`EARNINGS_TYPES`, `PAID_LEAVE_TYPES` and `ALLOWANCE_TYPES` are available for
+both jurisdictions. Use their strings in your normal payslip hash; the lists
+do not restrict input or add local enum/variant validation. The API may
+accept a new code before this gem is updated. Printed-text fields such as
+`tax_code` and `pay_cycle` are not code sets.
 
 ### Self-managed barcode flow
 

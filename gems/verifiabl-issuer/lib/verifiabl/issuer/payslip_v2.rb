@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative "generated/v2_currencies"
+require_relative "generated/v2_codes"
 
 module Verifiabl
   module Issuer
