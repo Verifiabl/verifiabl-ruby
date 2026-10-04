@@ -8,7 +8,7 @@ module Verifiabl
       module Australian
         EARNINGS_TYPES = %w[
           paid_leave allowance ordinary overtime bonus_commission directors_fees
-          lump_sum return_to_work
+          lump_sum return_to_work other
         ].map!(&:freeze).freeze
 
         PAID_LEAVE_TYPES = %w[
@@ -33,7 +33,7 @@ module Verifiabl
         EARNINGS_TYPES = %w[
           paid_leave allowance ordinary overtime penal_rate piece_work
           bonus_commission extra_pay schedular_payment directors_fees pay_as_you_go_holiday_pay leave_compensation_payment
-          annual_holiday_cash_out alternative_holiday_cash_out holiday_pay_on_termination
+          annual_holiday_cash_out alternative_holiday_cash_out holiday_pay_on_termination other
         ].map!(&:freeze).freeze
 
         PAID_LEAVE_TYPES = %w[
