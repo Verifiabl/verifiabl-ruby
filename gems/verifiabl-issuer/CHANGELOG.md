@@ -4,6 +4,10 @@ All notable changes to the Verifiabl Ruby SDK will be documented in this file.
 
 ## Unreleased
 
+## [0.2.0] - 2026-10-04
+
+- Add `four_weekly` and `semi_monthly` to the AU2 `PAY_FREQUENCIES`.
+
 ## [0.1.0] - 2026-09-30
 
 - First stable release of the Ruby issuer SDK. Keep the AU/NZ v2 preparation

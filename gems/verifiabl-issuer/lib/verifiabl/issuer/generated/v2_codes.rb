@@ -25,7 +25,7 @@ module Verifiabl
         ].map!(&:freeze).freeze
 
         PAY_FREQUENCIES = %w[
-          weekly fortnightly monthly quarterly
+          weekly fortnightly monthly quarterly four_weekly semi_monthly
         ].map!(&:freeze).freeze
       end
 
