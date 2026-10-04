@@ -9,7 +9,7 @@ client, RBS signatures, and packed-gem consumer qualification.
 Add the stable release to your bundle:
 
 ```ruby
-gem "verifiabl-issuer", "0.1.0"
+gem "verifiabl-issuer", "0.2.0"
 ```
 
 Then run `bundle install`.
@@ -214,7 +214,7 @@ contain the known codes, including the earnings discriminators:
 ```ruby
 au = Verifiabl::Issuer::PayslipCodes::Australian
 nz = Verifiabl::Issuer::PayslipCodes::NewZealand
-au::PAY_FREQUENCIES # => ["weekly", "fortnightly", "monthly", "quarterly"]
+au::PAY_FREQUENCIES # => ["weekly", "fortnightly", "monthly", "quarterly", "four_weekly", "semi_monthly"]
 au::OTHER_ALLOWANCE_CATEGORIES.include?("home_office") # => true
 nz::LEAVE_BALANCE_UNITS # => ["hours", "days", "weeks"]
 ```
