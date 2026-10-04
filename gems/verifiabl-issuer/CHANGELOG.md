@@ -4,6 +4,11 @@ All notable changes to the Verifiabl Ruby SDK will be documented in this file.
 
 ## Unreleased
 
+## [0.3.0] - 2026-10-04
+
+- Accept an `other` earnings line in AU2 and NZ2 payslips, for a pay code that
+  fits no other earnings type.
+
 ## [0.2.0] - 2026-10-04
 
 - Add `four_weekly` and `semi_monthly` to the AU2 `PAY_FREQUENCIES`.

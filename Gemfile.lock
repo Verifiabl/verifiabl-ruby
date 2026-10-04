@@ -1,7 +1,7 @@
 PATH
   remote: gems/verifiabl-issuer
   specs:
-    verifiabl-issuer (0.2.0)
+    verifiabl-issuer (0.3.0)
       base64 (~> 0.2)
       rqrcode_core (~> 2.1)
 
