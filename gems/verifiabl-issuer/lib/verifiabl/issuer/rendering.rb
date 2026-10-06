@@ -3,6 +3,7 @@
 require_relative "frame_assets"
 require_relative "png_encoder"
 require_relative "rendering_assets"
+require_relative "generated/horizontal_frame"
 
 module Verifiabl
   module Issuer
@@ -24,52 +25,66 @@ module Verifiabl
       SvgResult = Data.define(:svg, :width, :height, :content, :error_correction_level, :qr_version, :module_px, :degraded)
       PngResult = Data.define(:png, :width, :height, :content, :error_correction_level, :qr_version, :module_px, :degraded)
       Raster = Data.define(:rgba, :width, :height, :content, :error_correction_level, :qr_version, :module_px, :degraded)
-      RasterContext = Data.define(:rgba, :width, :denominator, :num_x, :num_y, :pixel_width)
-      SvgRequest = Data.define(:verifiabl_reference, :encrypted_pii, :width, :environment, :scan_base_url, :max_error_correction, :error_correction_level)
+      Geometry = Data.define(:viewbox_width, :height_units, :qr_x, :qr_y, :qr_units, :min_width, :png_width)
+      VERTICAL_GEOMETRY = Geometry.new(VIEWBOX_WIDTH, HEIGHT_UNITS, 0, QR_Y, QR_UNITS, MIN_WIDTH, 720)
+      # 96-unit QR, the same 7-unit gap as vertical, then an 85-unit panel.
+      # Corresponding widths give the same QR size in both layouts.
+      HORIZONTAL_GEOMETRY = Geometry.new(188, 96, 0, 0, 96, 940, 1410)
+      RasterContext = Data.define(:rgba, :width, :denominator, :num_x, :num_y, :pixel_width, :geometry)
+      SvgRequest = Data.define(:verifiabl_reference, :encrypted_pii, :width, :layout, :environment, :scan_base_url, :max_error_correction, :error_correction_level)
       PngRequest = Data.define(*SvgRequest.members, :compression_level)
-      SVG_DEFAULTS = {width: MIN_WIDTH, environment: :production, scan_base_url: nil, max_error_correction: nil, error_correction_level: nil}.freeze
+      SVG_DEFAULTS = {width: MIN_WIDTH, layout: :vertical, environment: :production, scan_base_url: nil, max_error_correction: nil, error_correction_level: nil}.freeze
       PNG_DEFAULTS = SVG_DEFAULTS.merge(width: 720, compression_level: 6).freeze
-      private_constant :Raster, :RasterContext, :SvgRequest, :PngRequest, :SVG_DEFAULTS, :PNG_DEFAULTS
+      private_constant :Raster, :RasterContext, :SvgRequest, :PngRequest, :SVG_DEFAULTS, :PNG_DEFAULTS, :Geometry, :VERTICAL_GEOMETRY, :HORIZONTAL_GEOMETRY
 
       module_function
 
       def svg(**options)
-        request = SvgRequest.new(**SVG_DEFAULTS.merge(options))
-        width = validate_svg_width(request.width)
+        geometry = geometry_for(options.fetch(:layout, :vertical))
+        request = SvgRequest.new(**SVG_DEFAULTS.merge(width: geometry.min_width).merge(options))
+        width = validate_svg_width(request.width, geometry.min_width)
         ladder = error_correction_ladder(request.max_error_correction, request.error_correction_level)
-        qr = select_qr(request, width, ladder)
-        module_size = QR_UNITS.to_f / qr.modules.length
-        module_px = module_size * width / VIEWBOX_WIDTH
-        build_svg_result(qr, ladder, width, module_size, module_px)
+        qr = select_qr(request, width, ladder, geometry)
+        build_svg_result(qr, ladder, width, geometry)
       end
 
-      def build_svg_result(qr, ladder, width, module_size, module_px)
-        height = round(width * HEIGHT_UNITS / VIEWBOX_WIDTH.to_f)
+      def build_svg_result(qr, ladder, width, geometry)
+        module_size = geometry.qr_units.to_f / qr.modules.length
+        module_px = module_size * width / geometry.viewbox_width
+        height = round(width * geometry.height_units / geometry.viewbox_width.to_f)
         SvgResult.new(
-          svg: svg_document(qr.modules, width, height, module_size).freeze,
+          svg: svg_document(qr.modules, [width, height], module_size, geometry).freeze,
           width:,
           height:,
+          **qr_metadata(qr, ladder, module_px)
+        )
+      end
+      private_class_method :build_svg_result
+
+      def qr_metadata(qr, ladder, module_px)
+        {
           content: qr.content,
           error_correction_level: qr.error_correction_level,
           qr_version: qr.version,
           module_px: round(module_px),
           degraded: degraded?(qr.error_correction_level, ladder, module_px)
-        )
+        }
       end
-      private_class_method :build_svg_result
+      private_class_method :qr_metadata
 
-      def svg_document(modules, width, height, module_size)
-        header = %(<path d="M0 8C0 3.58172 3.58172 0 8 0H88C92.4183 0 96 3.58172 96 8V47H0V8Z" fill="#{NAVY}"/>) + render_header
-        %(<svg xmlns="http://www.w3.org/2000/svg" width="#{number(width)}" height="#{number(height)}" viewBox="0 0 96 150" role="img" aria-label="Secured by Verifiabl verification barcode">) +
-          %(<rect x="0" y="39" width="96" height="111" fill="#FFFFFF"/>) + header +
-          %(<g transform="translate(0 54)"><g shape-rendering="crispEdges">) + render_modules(modules, module_size) +
+      def svg_document(modules, dimensions, module_size, geometry)
+        width, height = dimensions
+        frame = (geometry == HORIZONTAL_GEOMETRY) ? RenderingAssets::HORIZONTAL_FRAME : render_vertical_frame
+        %(<svg xmlns="http://www.w3.org/2000/svg" width="#{number(width)}" height="#{number(height)}" viewBox="0 0 #{geometry.viewbox_width} #{geometry.height_units}" role="img" aria-label="Secured by Verifiabl verification barcode">) + frame +
+          %(<g transform="translate(#{geometry.qr_x} #{geometry.qr_y})"><g shape-rendering="crispEdges">) + render_modules(modules, module_size) +
           %(</g>) + render_finders(modules.length, module_size) + %(</g></svg>)
       end
       private_class_method :svg_document
 
       def png(**options)
-        request = PngRequest.new(**PNG_DEFAULTS.merge(options))
-        validate_png_width(request.width)
+        geometry = geometry_for(options.fetch(:layout, :vertical))
+        request = PngRequest.new(**PNG_DEFAULTS.merge(width: geometry.png_width).merge(options))
+        validate_png_width(request.width, request.layout)
         ladder = error_correction_ladder(request.max_error_correction, request.error_correction_level)
         build_png_result(compose(request:, ladder:), request.compression_level)
       end
@@ -91,28 +106,30 @@ module Verifiabl
       def compose(**options)
         ladder = options.delete(:ladder)
         request = options.delete(:request) || PngRequest.new(**PNG_DEFAULTS.merge(options))
-        qr = select_qr(request, request.width, ladder)
-        rgba, raster_width, height = FrameAssets.raster(request.width)
-        blit_qr(rgba, raster_width, qr.modules, request.width)
-        build_raster(rgba, [raster_width, height], qr, ladder, request.width.to_f / qr.modules.length)
+        compose_qr(request, ladder, geometry_for(request.layout))
       end
       private_class_method :compose
+
+      def compose_qr(request, ladder, geometry)
+        qr = select_qr(request, request.width, ladder, geometry)
+        rgba, raster_width, height = FrameAssets.raster(request.width, layout: request.layout)
+        blit_qr(rgba, raster_width, qr.modules, request.width, geometry)
+        module_px = geometry.qr_units.to_f * request.width / (geometry.viewbox_width * qr.modules.length)
+        build_raster(rgba, [raster_width, height], qr, ladder, module_px)
+      end
+      private_class_method :compose_qr
 
       def build_raster(rgba, dimensions, qr, ladder, module_px)
         Raster.new(
           rgba: rgba.freeze,
           width: dimensions.fetch(0),
           height: dimensions.fetch(1),
-          content: qr.content,
-          error_correction_level: qr.error_correction_level,
-          qr_version: qr.version,
-          module_px: round(module_px),
-          degraded: degraded?(qr.error_correction_level, ladder, module_px)
+          **qr_metadata(qr, ladder, module_px)
         )
       end
       private_class_method :build_raster
 
-      def select_qr(request, width, ladder)
+      def select_qr(request, width, ladder, geometry)
         ladder.each do |level|
           begin
             qr = Qr.encode_scan_url(
@@ -125,7 +142,7 @@ module Verifiabl
           rescue Qr::CapacityError
             next
           end
-          return qr if width.to_f / qr.modules.length >= MIN_MODULE_PX
+          return qr if geometry.qr_units.to_f * width / (geometry.viewbox_width * qr.modules.length) >= MIN_MODULE_PX
         end
         raise Qr::CapacityError, "The PII is too long to render a scannable barcode in the branded frame at width #{number(width)}, even at the lowest error correction"
       end
@@ -237,6 +254,12 @@ module Verifiabl
       end
       private_class_method :rounded_rect_left
 
+      def render_vertical_frame
+        header = %(<path d="M0 8C0 3.58172 3.58172 0 8 0H88C92.4183 0 96 3.58172 96 8V47H0V8Z" fill="#{NAVY}"/>) + render_header
+        %(<rect x="0" y="39" width="96" height="111" fill="#FFFFFF"/>) + header
+      end
+      private_class_method :render_vertical_frame
+
       def render_header
         secured_by = RenderingAssets::SECURED_BY_PATH.sub("{color}", "#FFFFFF")
         wordmark = %(<g transform="translate(8 23) scale(1)" fill="#FFFFFF">#{RenderingAssets::WORDMARK_PATHS}</g>)
@@ -244,8 +267,8 @@ module Verifiabl
       end
       private_class_method :render_header
 
-      def blit_qr(rgba, raster_width, modules, pixel_width)
-        context = raster_context(rgba, raster_width, modules.length, pixel_width)
+      def blit_qr(rgba, raster_width, modules, pixel_width, geometry)
+        context = raster_context(rgba, raster_width, modules.length, pixel_width, geometry)
         edges_x, edges_y = raster_edges(context, modules.length)
         draw_raster_modules(context, modules, edges_x, edges_y)
 
@@ -256,11 +279,13 @@ module Verifiabl
       end
       private_class_method :blit_qr
 
-      def raster_context(rgba, width, size, pixel_width)
-        denominator = VIEWBOX_WIDTH * size
-        num_x = ->(position) { pixel_width * QR_UNITS * position }
-        num_y = ->(position) { pixel_width * (QR_Y * size + QR_UNITS * position) }
-        RasterContext.new(rgba:, width:, denominator:, num_x:, num_y:, pixel_width:)
+      # Keep module edges and finder coverage in exact rational/integer units.
+      # Floating-point raster geometry would break cross-SDK pixel parity.
+      def raster_context(rgba, width, size, pixel_width, geometry)
+        denominator = geometry.viewbox_width * size
+        num_x = ->(position) { pixel_width * (geometry.qr_x * size + geometry.qr_units * position) }
+        num_y = ->(position) { pixel_width * (geometry.qr_y * size + geometry.qr_units * position) }
+        RasterContext.new(rgba:, width:, denominator:, num_x:, num_y:, pixel_width:, geometry:)
       end
       private_class_method :raster_context
 
@@ -295,8 +320,8 @@ module Verifiabl
       private_class_method :render_raster_finder
 
       def raster_finder_shapes(context, module_x, module_y)
-        module_q = QR_UNITS * context.pixel_width * 80
-        radius_unit = QR_UNITS * context.pixel_width
+        module_q = context.geometry.qr_units * context.pixel_width * 80
+        radius_unit = context.geometry.qr_units * context.pixel_width
         outer = raster_finder_outer(context, module_x, module_y, module_q, radius_unit)
         {outer:, inner: inset_finder_shape(outer, module_q, 1, 80 * radius_unit), dot: inset_finder_shape(outer, module_q, 2, 52 * radius_unit)}
       end
@@ -385,18 +410,27 @@ module Verifiabl
       end
       private_class_method :fill_black
 
-      def validate_svg_width(value)
-        unless value.is_a?(Numeric) && value.finite? && value >= MIN_WIDTH
-          raise ArgumentError, "width must be at least #{MIN_WIDTH}"
+      def geometry_for(layout)
+        return VERTICAL_GEOMETRY if layout == :vertical
+        return HORIZONTAL_GEOMETRY if layout == :horizontal
+
+        raise ArgumentError, "layout must be :vertical or :horizontal"
+      end
+      private_class_method :geometry_for
+
+      def validate_svg_width(value, minimum)
+        unless value.is_a?(Numeric) && value.finite? && value >= minimum
+          raise ArgumentError, "width must be at least #{minimum}"
         end
         value
       end
       private_class_method :validate_svg_width
 
-      def validate_png_width(value)
-        return value if value.is_a?(Integer) && FrameAssets::SUPPORTED_WIDTHS.include?(value)
+      def validate_png_width(value, layout)
+        widths = FrameAssets.supported_widths(layout)
+        return value if value.is_a?(Integer) && widths.include?(value)
 
-        raise ArgumentError, "width must be one of #{FrameAssets::SUPPORTED_WIDTHS.join(", ")}"
+        raise ArgumentError, "width must be one of #{widths.join(", ")}"
       end
       private_class_method :validate_png_width
 

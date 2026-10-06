@@ -66,8 +66,8 @@ module Verifiabl
     def self.generate_verifiabl_reference: () -> String
     def self.build_barcode_payload: (verifiabl_reference: String, encrypted_pii: binary) -> String
     def self.build_scan_url: (verifiabl_reference: String, encrypted_pii: binary, ?environment: Symbol | String, ?scan_base_url: String?) -> String
-    def self.build_barcode_svg: (verifiabl_reference: String, encrypted_pii: binary, ?width: Numeric, ?environment: Symbol | String, ?scan_base_url: String?, ?max_error_correction: Symbol | String, ?error_correction_level: Symbol | String) -> Rendering::SvgResult
-    def self.build_barcode_png: (verifiabl_reference: String, encrypted_pii: binary, ?width: Integer, ?environment: Symbol | String, ?scan_base_url: String?, ?max_error_correction: Symbol | String, ?error_correction_level: Symbol | String, ?compression_level: Integer) -> Rendering::PngResult
+    def self.build_barcode_svg: (verifiabl_reference: String, encrypted_pii: binary, ?width: Numeric, ?layout: :vertical | :horizontal, ?environment: Symbol | String, ?scan_base_url: String?, ?max_error_correction: Symbol | String, ?error_correction_level: Symbol | String) -> Rendering::SvgResult
+    def self.build_barcode_png: (verifiabl_reference: String, encrypted_pii: binary, ?width: Integer, ?layout: :vertical | :horizontal, ?environment: Symbol | String, ?scan_base_url: String?, ?max_error_correction: Symbol | String, ?error_correction_level: Symbol | String, ?compression_level: Integer) -> Rendering::PngResult
 
     class PreparedV2Payslip
       attr_reader verifiabl_reference: String

@@ -43,6 +43,13 @@ Dir.mktmpdir("verifiabl-packed-gem-") do |directory|
       abort "invalid reference" unless valid_reference
       png = Verifiabl::Issuer.build_barcode_png(verifiabl_reference: reference, encrypted_pii: "foo".b, width: 480)
       abort "invalid PNG" unless png.png.start_with?([137, 80, 78, 71, 13, 10, 26, 10].pack("C*"))
+      svg = Verifiabl::Issuer.build_barcode_svg(verifiabl_reference: reference, encrypted_pii: "foo".b, layout: :horizontal)
+      abort "invalid horizontal SVG" unless svg.width == 940 && svg.height == 480 && svg.svg.include?('viewBox="0 0 188 96"')
+      [940, 1410, 1880, 2820].each do |width|
+        horizontal = Verifiabl::Issuer.build_barcode_png(verifiabl_reference: reference, encrypted_pii: "foo".b, layout: :horizontal, width: width)
+        abort "invalid horizontal PNG" unless horizontal.png.start_with?([137, 80, 78, 71, 13, 10, 26, 10].pack("C*"))
+        abort "wrong horizontal dimensions" unless horizontal.width == width && horizontal.height == width * 96 / 188
+      end
     RUBY
     <<~RUBY
       require "verifiabl-issuer"

@@ -26,17 +26,21 @@ class RenderingTest < Minitest::Test
 
   def test_other_svg_profiles_exactly_match_the_node_renderer
     scenarios = [
-      ["short-default-480", "\0".b, 480, :production, nil],
-      ["sandbox-q-720", CIPHERTEXT, 720, :sandbox, :q]
+      ["short-default-480", "\0".b, 480, :production, nil, :vertical],
+      ["sandbox-q-720", CIPHERTEXT, 720, :sandbox, :q, :vertical],
+      ["horizontal-940", CIPHERTEXT, 940, :production, nil, :horizontal],
+      ["short-horizontal-940", "\0".b, 940, :production, nil, :horizontal],
+      ["sandbox-q-horizontal-1410", CIPHERTEXT, 1410, :sandbox, :q, :horizontal]
     ]
 
-    scenarios.each do |name, ciphertext, width, environment, maximum|
+    scenarios.each do |name, ciphertext, width, environment, maximum, layout|
       result = Verifiabl::Issuer.build_barcode_svg(
         verifiabl_reference: REFERENCE,
         encrypted_pii: ciphertext,
         width:,
         environment:,
-        max_error_correction: maximum
+        max_error_correction: maximum,
+        layout:
       )
       assert_equal File.read(File.join(FIXTURES, "node-svg-#{name}.svg")), result.svg
       assert_metadata expected_metadata("svg", name), result
@@ -45,14 +49,18 @@ class RenderingTest < Minitest::Test
 
   def test_png_rasters_exactly_match_the_node_compositor
     scenarios = [
-      ["png-default-1440", CIPHERTEXT, 1440, :production, nil],
-      ["png-default-720", CIPHERTEXT, 720, :production, nil],
-      ["png-short-default-480", "\0".b, 480, :production, nil],
-      ["png-sandbox-q-480", CIPHERTEXT, 480, :sandbox, :q]
+      ["png-default-1440", CIPHERTEXT, 1440, :production, nil, :vertical],
+      ["png-default-720", CIPHERTEXT, 720, :production, nil, :vertical],
+      ["png-short-default-480", "\0".b, 480, :production, nil, :vertical],
+      ["png-sandbox-q-480", CIPHERTEXT, 480, :sandbox, :q, :vertical],
+      ["png-horizontal-1410", CIPHERTEXT, 1410, :production, nil, :horizontal],
+      ["png-horizontal-2820", CIPHERTEXT, 2820, :production, nil, :horizontal],
+      ["png-short-horizontal-940", "\0".b, 940, :production, nil, :horizontal],
+      ["png-sandbox-q-horizontal-940", CIPHERTEXT, 940, :sandbox, :q, :horizontal]
     ]
     rendering = Verifiabl::Issuer::Rendering
 
-    scenarios.each do |name, ciphertext, width, environment, maximum|
+    scenarios.each do |name, ciphertext, width, environment, maximum, layout|
       ladder = rendering.send(:error_correction_ladder, maximum, nil)
       raster = rendering.send(
         :compose,
@@ -61,6 +69,7 @@ class RenderingTest < Minitest::Test
         width:,
         environment:,
         scan_base_url: nil,
+        layout:,
         ladder:
       )
       expected = inflate_raw(File.binread(File.join(FIXTURES, "node-#{name}.rgba.deflate")))

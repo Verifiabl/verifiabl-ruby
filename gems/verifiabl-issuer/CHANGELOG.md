@@ -4,6 +4,15 @@ All notable changes to the Verifiabl Ruby SDK will be documented in this file.
 
 ## Unreleased
 
+## [0.4.0] - 2026-10-07
+
+- Add `layout: :horizontal` to local SVG and PNG rendering, with the QR on the
+  left, a 7-unit white gap and an opaque light-tinted brand panel on the right.
+  SVG minimum/default width is 940; PNG supports 940, 1410, 1880 and 2820 pixels
+  (default 1410). Vertical stays the default with unchanged output.
+- Qualify horizontal SVG bytes, PNG pixels and QR metadata against Node and .NET,
+  including independent digital decoding.
+
 ## [0.3.0] - 2026-10-04
 
 - Accept an `other` earnings line in AU2 and NZ2 payslips, for a pay code that

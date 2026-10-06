@@ -59,10 +59,22 @@ module Verifiabl
         Payload.scan_url(**options)
       end
 
+      # Render a branded SVG. Vertical is the default; horizontal puts the QR
+      # on the left and the light-tinted brand panel on the right.
+      # @param options [Hash] rendering and scan-URL options
+      # @option options [Symbol] :layout (:vertical) :vertical or :horizontal
+      # @option options [Numeric] :width minimum/default 480 vertical, 940 horizontal
+      # @return [Rendering::SvgResult] deterministic SVG and QR metadata
       def build_barcode_svg(**options)
         Rendering.svg(**options)
       end
 
+      # Render a deterministic branded PNG from a pre-rasterised frame.
+      # @param options [Hash] rendering and scan-URL options
+      # @option options [Symbol] :layout (:vertical) :vertical or :horizontal
+      # @option options [Integer] :width default 720 vertical, 1410 horizontal;
+      #   supported widths are 480/720/960/1440 and 940/1410/1880/2820 respectively
+      # @return [Rendering::PngResult] deterministic PNG and QR metadata
       def build_barcode_png(**options)
         Rendering.png(**options)
       end
