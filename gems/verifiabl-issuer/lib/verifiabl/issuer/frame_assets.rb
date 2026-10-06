@@ -12,17 +12,28 @@ module Verifiabl
 
       module_function
 
-      def raster(width)
-        frame = load(width)
+      def raster(width, layout: :vertical)
+        frame = load(width, layout:)
         rgba = String.new(capacity: frame.width * frame.height * 4, encoding: Encoding::BINARY)
         entries = frame.palette.bytes.each_slice(4).map { |bytes| bytes.pack("C4") }
         frame.indices.each_byte { |index| rgba << entries.fetch(index) }
         [rgba, frame.width, frame.height]
       end
 
-      def load(width)
+      def supported_widths(layout)
+        return SUPPORTED_WIDTHS if layout == :vertical
+        return SUPPORTED_HORIZONTAL_WIDTHS if layout == :horizontal
+
+        raise ArgumentError, "layout must be :vertical or :horizontal"
+      end
+
+      def load(width, layout: :vertical)
+        unless supported_widths(layout).include?(width)
+          raise ArgumentError, "unsupported frame width"
+        end
         @cache ||= {}
-        @cache[width] ||= parse(File.binread(File.join(__dir__, "assets", "frame-#{width}.vfr1")), expected_width: width)
+        name = (layout == :horizontal) ? "frame-horizontal-#{width}.vfr1" : "frame-#{width}.vfr1"
+        @cache[[layout, width]] ||= parse(File.binread(File.join(__dir__, "assets", name)), expected_width: width)
       end
 
       def parse(container, expected_width: nil)

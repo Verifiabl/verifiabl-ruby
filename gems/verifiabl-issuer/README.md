@@ -9,7 +9,7 @@ client, RBS signatures, and packed-gem consumer qualification.
 Add the stable release to your bundle:
 
 ```ruby
-gem "verifiabl-issuer", "0.3.0"
+gem "verifiabl-issuer", "0.4.0"
 ```
 
 Then run `bundle install`.
@@ -466,9 +466,31 @@ File.binwrite("barcode.png", png.png)
 ```
 
 The renderers use the same official vector frame, rounded finder geometry, and QR error-correction
-ladder as the Node and .NET SDKs. SVG widths are continuously scalable from 480 upward. PNG frames
-are pre-rasterised for deterministic cross-SDK output and therefore support only `480`, `720`,
-`960`, and `1440` pixels. Use `max_error_correction: :q` for greater damage recovery; the default is
+ladder as the Node and .NET SDKs. Vertical is the default; pass `layout: :horizontal` to put the
+QR on the left at full badge height, followed by a 7-unit white gap and the light-tinted
+"Secured by Verifiabl" panel on the right. Horizontal rendering is included in `0.4.0`.
+
+| Layout | SVG minimum/default width | PNG widths | PNG default width |
+| --- | ---: | --- | ---: |
+| `:vertical` | 480 | 480, 720, 960, 1440 | 720 |
+| `:horizontal` | 940 | 940, 1410, 1880, 2820 | 1410 |
+
+SVG widths scale continuously above the minimum. PNG frames are pre-rasterised for deterministic
+cross-SDK output and support only the listed widths. Both layouts render the QR at the same sizes
+at corresponding widths; the horizontal badge's total width includes its brand panel and gap.
+For example, `build_barcode_svg(**parts, layout: :horizontal)` returns a 940×480 SVG and
+`build_barcode_png(**parts, layout: :horizontal)` returns a 1410×720 PNG.
+
+### Badge placement
+
+Place the badge on a light background with a clear margin of at least four QR modules
+(`result.module_px` at the rendered size) on every open QR side: **left, right and bottom** for
+vertical; **left, top and bottom** for horizontal. A tenth of the QR side covers realistic records.
+The host document supplies these quiet zones; the badge supplies only the gap facing the brand
+frame. Size the QR, not the whole horizontal badge: a 22 mm QR means a horizontal badge about
+43.08 mm wide and 22 mm high.
+
+Use `max_error_correction: :q` for greater damage recovery; the default is
 `:m`, and the renderer steps down only when necessary to preserve the three-pixel module floor.
 Each result's `degraded` field (`svg.degraded` or `png.degraded` above) is true when the renderer
 steps down from the requested ceiling or the modules fall below the ideal four-pixel size.

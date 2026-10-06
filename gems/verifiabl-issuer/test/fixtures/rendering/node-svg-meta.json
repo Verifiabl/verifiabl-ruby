@@ -39,5 +39,32 @@
     "qrVersion": 15,
     "modulePx": 9.35,
     "degraded": false
+  },
+  "horizontal-940": {
+    "width": 940,
+    "height": 480,
+    "content": "https://v.verifiabl.io/v/u0FE9WLIS7GYKQnpJPygBw#2.AG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXM46X36Y",
+    "errorCorrectionLevel": "M",
+    "qrVersion": 12,
+    "modulePx": 7.38,
+    "degraded": false
+  },
+  "short-horizontal-940": {
+    "width": 940,
+    "height": 480,
+    "content": "https://v.verifiabl.io/v/u0FE9WLIS7GYKQnpJPygBw#2.AA",
+    "errorCorrectionLevel": "M",
+    "qrVersion": 4,
+    "modulePx": 14.55,
+    "degraded": false
+  },
+  "sandbox-q-horizontal-1410": {
+    "width": 1410,
+    "height": 720,
+    "content": "https://v.sandbox.verifiabl.io/v/u0FE9WLIS7GYKQnpJPygBw#2.AG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXAG64A33QDPOAN5YBXXM46X36Y",
+    "errorCorrectionLevel": "Q",
+    "qrVersion": 15,
+    "modulePx": 9.35,
+    "degraded": false
   }
 }
