@@ -156,7 +156,7 @@ class ClientTest < Minitest::Test
     assert_equal "IV_REUSED", error.code
     assert_equal "request-1", error.request_id
     assert_equal "The encryption IV is already registered. Encrypt the payslip again and rebuild its barcode.", error.message
-    refute_includes error.message, "Jane"
+    refute_includes error.message, "1234.56"
   end
 
   def test_normalizes_malformed_api_error_bodies
@@ -512,10 +512,12 @@ class ClientTest < Minitest::Test
     assert_equal "pay-1", result.results.first.external_id
   end
 
-  def test_legacy_new_zealand_v1_batch_record_is_sent
+  def test_new_zealand_v2_batch_record_is_sent
     requests = []
     reference = "AbCdEfGhIjKlMnOpQrStUv"
-    record = registration.merge(schema: "nz.payslip.v1", verifiabl_reference: reference)
+    record = registration.merge(schema: "nz.payslip.v2", verifiabl_reference: reference,
+      payslip_non_pii: {period_end: "2026-06-15", payment_date: "2026-06-18", currency: "NZD",
+                        gross: "1234.56", paye: "234.56", net: "1000.00"})
     client = build_client(lambda do |**request|
       requests << request
       if request.fetch(:url).include?("/oauth/token")
@@ -527,8 +529,33 @@ class ClientTest < Minitest::Test
 
     result = client.register_non_pii_batch([record])
 
-    assert_equal "nz.payslip.v1", JSON.parse(requests.last.fetch(:body)).fetch("records").first.fetch("schema")
+    sent = JSON.parse(requests.last.fetch(:body)).fetch("records").first
+    assert_equal "nz.payslip.v2", sent.fetch("schema")
+    assert_equal "234.56", sent.fetch("payslip_non_pii").fetch("paye")
     assert_equal "created", result.results.first.status
+  end
+
+  # v1 is no longer special: like any schema without a field tree, it goes to
+  # the API, which rejects it per record.
+  def test_v1_batch_records_are_sent_to_the_api_like_any_unknown_schema
+    %w[au.payslip.v1 nz.payslip.v1].each do |schema|
+      requests = []
+      reference = "AbCdEfGhIjKlMnOpQrStUv"
+      record = registration.merge(schema:, verifiabl_reference: reference, payslip_non_pii: {period_end: "2026-06-15"})
+      client = build_client(lambda do |**request|
+        requests << request
+        if request.fetch(:url).include?("/oauth/token")
+          response(200, access_token: "token", expires_in: 3600)
+        else
+          response(200, results: [{status: "error", code: "VALIDATION_FAILED", detail: "unsupported schema", verifiabl_reference: reference}])
+        end
+      end)
+
+      result = client.register_non_pii_batch([record])
+
+      assert_equal schema, JSON.parse(requests.last.fetch(:body)).fetch("records").first.fetch("schema")
+      assert_equal "VALIDATION_FAILED", result.results.first.code
+    end
   end
 
   def test_invalid_v2_batch_record_is_not_sent_and_keeps_result_order
@@ -657,9 +684,10 @@ class ClientTest < Minitest::Test
 
   def registration
     {
-      schema: "au.payslip.v1",
+      schema: "au.payslip.v2",
       issued_at: "2026-06-11T00:00:00Z",
-      payslip_non_pii: {period_start: "2026-06-01", employee_label: "Jane"},
+      payslip_non_pii: {period_start: "2026-06-01", period_end: "2026-06-15", payment_date: "2026-06-18",
+                        currency: "AUD", gross: "1234.56", paygw: "234.56", net: "1000.00"},
       encryption_metadata: {iv: "\0".b * 12, tag: "\0".b * 16}
     }
   end

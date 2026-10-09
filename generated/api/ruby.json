@@ -157,17 +157,6 @@
           }
         },
         {
-          "path": "Verifiabl::Issuer.format_pii",
-          "name": "format_pii",
-          "kind": "method",
-          "scope": "singleton",
-          "signature": "def self.format_pii: (Hash[Symbol | String, String?]) -> String",
-          "documentation": {
-            "summary": "",
-            "tags": []
-          }
-        },
-        {
           "path": "Verifiabl::Issuer.generate_verifiabl_reference",
           "name": "generate_verifiabl_reference",
           "kind": "method",
@@ -668,6 +657,36 @@
           "name": "EARNINGS_TYPES",
           "kind": "constant",
           "signature": "EARNINGS_TYPES: Array[String]",
+          "documentation": {
+            "summary": "",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer::PayslipCodes::Australian::ETP_COMPONENTS",
+          "name": "ETP_COMPONENTS",
+          "kind": "constant",
+          "signature": "ETP_COMPONENTS: Array[String]",
+          "documentation": {
+            "summary": "",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer::PayslipCodes::Australian::ETP_TYPES",
+          "name": "ETP_TYPES",
+          "kind": "constant",
+          "signature": "ETP_TYPES: Array[String]",
+          "documentation": {
+            "summary": "",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer::PayslipCodes::Australian::LUMP_SUM_TYPES",
+          "name": "LUMP_SUM_TYPES",
+          "kind": "constant",
+          "signature": "LUMP_SUM_TYPES: Array[String]",
           "documentation": {
             "summary": "",
             "tags": []

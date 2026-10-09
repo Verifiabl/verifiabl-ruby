@@ -9,7 +9,7 @@ client, RBS signatures, and packed-gem consumer qualification.
 Add the stable release to your bundle:
 
 ```ruby
-gem "verifiabl-issuer", "0.4.0"
+gem "verifiabl-issuer", "0.5.0"
 ```
 
 Then run `bundle install`.
@@ -220,10 +220,12 @@ nz::LEAVE_BALANCE_UNITS # => ["hours", "days", "weeks"]
 ```
 
 `EARNINGS_TYPES`, `PAID_LEAVE_TYPES` and `ALLOWANCE_TYPES` are available for
-both jurisdictions. Use their strings in your normal payslip hash; the lists
-do not restrict input or add local enum/variant validation. The API may
-accept a new code before this gem is updated. Printed-text fields such as
-`tax_code` and `pay_cycle` are not code sets.
+both jurisdictions. An AU2 `lump_sum` line takes a `lump_sum_type` from
+`LUMP_SUM_TYPES`, and an `etp` line takes an `etp_type` from `ETP_TYPES` and
+an `etp_component` from `ETP_COMPONENTS`. Use their strings in your normal
+payslip hash; the lists do not restrict input or add local enum/variant
+validation. The API may accept a new code before this gem is updated.
+Printed-text fields such as `tax_code` and `pay_cycle` are not code sets.
 
 ### Self-managed barcode flow
 
@@ -425,13 +427,16 @@ failures raise `TransportError`. Request and error messages never include the su
 
 ## Offline protocol primitives
 
-Format and encrypt PII locally. The plaintext must never be logged or sent to Verifiabl:
+Most integrations should use the v2 preparation helpers. To select the schema and formatter
+yourself, format and encrypt PII locally with `format_australian_pii` (AU2, for `au.payslip.v2`) or
+`format_new_zealand_pii` (NZ2, for `nz.payslip.v2`). The plaintext must never be logged or sent to
+Verifiabl:
 
 ```ruby
-plaintext = Verifiabl::Issuer.format_pii(
+plaintext = Verifiabl::Issuer.format_australian_pii(
   employee_name: "Jane Doe",
   employer_abn: "53004085616",
-  address: "12 Example St, Sydney NSW 2000"
+  address: {lines: ["12 Example St"], suburb: "Sydney", state_or_territory: "NSW", postcode: "2000"}
 )
 
 encrypted = Verifiabl::Issuer.encrypt_pii(plaintext, provider_encryption_key)

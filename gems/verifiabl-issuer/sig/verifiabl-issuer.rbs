@@ -11,6 +11,9 @@ module Verifiabl
         PAID_LEAVE_TYPES: Array[String]
         ALLOWANCE_TYPES: Array[String]
         OTHER_ALLOWANCE_CATEGORIES: Array[String]
+        LUMP_SUM_TYPES: Array[String]
+        ETP_TYPES: Array[String]
+        ETP_COMPONENTS: Array[String]
         PAY_FREQUENCIES: Array[String]
       end
 
@@ -57,7 +60,6 @@ module Verifiabl
       ?address: new_zealand_address?
     }
 
-    def self.format_pii: (Hash[Symbol | String, String?]) -> String
     def self.format_australian_pii: (australian_pii_fields) -> String
     def self.format_new_zealand_pii: (new_zealand_pii_fields) -> String
     def self.prepare_australian_v2_payslip: (pii: australian_pii_fields, payslip_non_pii: Hash[Symbol | String, untyped], issued_at: String | Time, key: binary, ?verifiabl_reference: String) -> PreparedV2Payslip

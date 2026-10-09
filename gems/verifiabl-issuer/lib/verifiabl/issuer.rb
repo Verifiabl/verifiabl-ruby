@@ -21,10 +21,6 @@ require_relative "issuer/version"
 module Verifiabl
   module Issuer
     class << self
-      def format_pii(fields)
-        Pii.format(fields)
-      end
-
       def format_australian_pii(fields)
         Pii.format_australian(fields)
       end

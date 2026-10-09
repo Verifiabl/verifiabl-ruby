@@ -30,7 +30,10 @@
         "rate": "decimal",
         "ytd_amount": "decimal",
         "allowance_type": null,
-        "other_category": null
+        "other_category": null,
+        "lump_sum_type": null,
+        "etp_type": null,
+        "etp_component": null
       }
     ],
     "salary_sacrifice": [

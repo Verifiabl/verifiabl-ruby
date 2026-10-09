@@ -173,7 +173,7 @@ module ApiReference
     raise "Duplicate public API paths: #{duplicates.join(", ")}" unless duplicates.empty?
 
     required = [
-      "Verifiabl::Issuer.format_pii",
+      "Verifiabl::Issuer.format_australian_pii",
       "Verifiabl::Issuer::Client#register_non_pii",
       "Verifiabl::Issuer::Rendering::SvgResult#svg"
     ]
