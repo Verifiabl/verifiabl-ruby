@@ -15,6 +15,16 @@ class V2WireVectorsTest < Minitest::Test
         {type: "allowance", amount: "12.50", allowance_type: "other", other_category: "home_office"}
       ]
     },
+    "au-lump-sum-and-etp" => {
+      period_end: "2026-09-30", payment_date: "2026-09-30", currency: "AUD",
+      gross: "41250.00", paygw: "9850.00", net: "31400.00",
+      earnings: [
+        {type: "ordinary", amount: "3250.00"},
+        {type: "lump_sum", lump_sum_type: "a_redundancy", amount: "6000.00"},
+        {type: "lump_sum", lump_sum_type: "d", amount: "20000.00", ytd_amount: "20000.00"},
+        {type: "etp", etp_type: "redundancy_split", etp_component: "taxable", amount: "12000.00", units: "8", rate: "1500.00"}
+      ]
+    },
     "nz-leave-and-dates" => {
       period_end: "2026-08-31", payment_date: "2026-09-04", currency: "NZD",
       gross: "7600.00", paye: "1710.00", net: "5890.00",

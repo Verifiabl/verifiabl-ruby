@@ -68,9 +68,10 @@ class ClientLifecycleTest < Minitest::Test
 
   def registration
     {
-      schema: "au.payslip.v1",
+      schema: "au.payslip.v2",
       issued_at: "2026-06-11T00:00:00Z",
-      payslip_non_pii: {period_start: "2026-06-01"},
+      payslip_non_pii: {period_start: "2026-06-01", period_end: "2026-06-15", payment_date: "2026-06-18",
+                        currency: "AUD", gross: "1234.56", paygw: "234.56", net: "1000.00"},
       encryption_metadata: {iv: "\0".b * 12, tag: "\0".b * 16}
     }
   end

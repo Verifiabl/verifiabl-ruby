@@ -6,16 +6,12 @@ require_relative "generated/jurisdiction_pii_profiles"
 module Verifiabl
   module Issuer
     module Pii
-      FIELD_ORDER = %i[
-        employee_name position department employer_abn bsb account_number account_name address
-      ].freeze
       AUSTRALIAN_FIELD_ORDER = JurisdictionPiiProfiles::AUSTRALIAN_FIELD_ORDER
       NEW_ZEALAND_FIELD_ORDER = JurisdictionPiiProfiles::NEW_ZEALAND_FIELD_ORDER
-      PROFILE_ID = PiiTextProfile::PROFILE_ID
       AUSTRALIAN_PROFILE_ID = JurisdictionPiiProfiles::AUSTRALIAN_PROFILE_ID
       NEW_ZEALAND_PROFILE_ID = JurisdictionPiiProfiles::NEW_ZEALAND_PROFILE_ID
       PROFILE_UNICODE_VERSION = PiiTextProfile::UNICODE_VERSION
-      PAYLOAD_MAX_BYTES = PiiTextProfile::PAYLOAD_MAX_BYTES
+      PAYLOAD_MAX_BYTES = JurisdictionPiiProfiles::PAYLOAD_MAX_BYTES
       FORMAT_CHARACTER_RANGES = PiiTextProfile::FORMAT_CHARACTER_RANGES
 
       Violation = Data.define(:field, :reason)
@@ -43,16 +39,8 @@ module Verifiabl
 
       module_function
 
-      # Formats employee PII into the current P2 plaintext wire format. The
-      # returned value must be encrypted before it is persisted or embedded.
-      def format(fields)
-        validate_fields!(fields)
-        values, violations = normalize_values(fields)
-        raise ValidationError, violations unless violations.empty?
-
-        format_profile("P2", FIELD_ORDER.map { |field| values.fetch(field) })
-      end
-
+      # Formats Australian employee PII as AU2 plaintext. The returned value
+      # must be encrypted before it is persisted or embedded.
       def format_australian(fields)
         allowed = %i[
           employee_name position department employer_name employer_abn bsb account_number account_name address
@@ -69,6 +57,8 @@ module Verifiabl
         format_profile(JurisdictionPiiProfiles::AUSTRALIAN_MARKER, AUSTRALIAN_FIELD_ORDER.map { |field| wire_values.fetch(field) })
       end
 
+      # Formats New Zealand employee PII as NZ2 plaintext. The returned value
+      # must be encrypted before it is persisted or embedded.
       def format_new_zealand(fields)
         allowed = %i[
           employee_name ird_number position department employer_name account_number account_name address
@@ -83,7 +73,7 @@ module Verifiabl
         format_profile(JurisdictionPiiProfiles::NEW_ZEALAND_MARKER, NEW_ZEALAND_FIELD_ORDER.map { |field| wire_values.fetch(field) })
       end
 
-      def validate_fields!(fields, allowed = FIELD_ORDER)
+      def validate_fields!(fields, allowed)
         raise ArgumentError, "fields must be a Hash" unless fields.is_a?(Hash)
 
         normalized_keys = fields.keys.map do |key|
@@ -94,11 +84,6 @@ module Verifiabl
         raise ArgumentError, "unknown PII field: #{unknown.first}" unless unknown.empty?
       end
       private_class_method :validate_fields!
-
-      def normalize_values(fields)
-        normalize_named_values(fields, FIELD_ORDER)
-      end
-      private_class_method :normalize_values
 
       def normalize_named_values(fields, names)
         names.each_with_object([{}, []]) do |field, (values, violations)|
@@ -155,8 +140,9 @@ module Verifiabl
 
       def format_profile(version, segments)
         plaintext = "#{version}|#{segments.join("|")}"
-        limit = (version == "P2") ? PAYLOAD_MAX_BYTES : JurisdictionPiiProfiles::PAYLOAD_MAX_BYTES
-        raise RangeError, "#{version} plaintext exceeds #{limit} UTF-8 bytes" if plaintext.bytesize > limit
+        if plaintext.bytesize > PAYLOAD_MAX_BYTES
+          raise RangeError, "#{version} plaintext exceeds #{PAYLOAD_MAX_BYTES} UTF-8 bytes"
+        end
 
         plaintext
       end

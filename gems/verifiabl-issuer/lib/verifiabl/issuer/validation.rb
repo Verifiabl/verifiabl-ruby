@@ -57,9 +57,6 @@ module Verifiabl
 
       def validate_payslip_non_pii!(schema, payslip_non_pii)
         raise ArgumentError, "payslip_non_pii must be a Hash" unless payslip_non_pii.is_a?(Hash)
-        if %w[au.payslip.v1 nz.payslip.v1].include?(schema) && !key?(payslip_non_pii, :period_start)
-          raise ArgumentError, "period_start is required for #{schema}"
-        end
         validate_iso_date!(value(payslip_non_pii, :period_start), "period_start") if key?(payslip_non_pii, :period_start)
         validate_iso_date!(value(payslip_non_pii, :period_end), "period_end") if key?(payslip_non_pii, :period_end)
         validate_v2_currency!(payslip_non_pii) if [AUSTRALIAN_PAYSLIP_V2_SCHEMA, NEW_ZEALAND_PAYSLIP_V2_SCHEMA].include?(schema)

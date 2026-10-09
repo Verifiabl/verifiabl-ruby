@@ -5,9 +5,10 @@ require_relative "test_helper"
 
 class ValidationTest < Minitest::Test
   VALID = {
-    schema: "au.payslip.v1",
+    schema: "au.payslip.v2",
     issued_at: "2026-06-11T00:00:00Z",
-    payslip_non_pii: {period_start: "2026-06-01", period_end: "2026-06-15"},
+    payslip_non_pii: {period_start: "2026-06-01", period_end: "2026-06-15", payment_date: "2026-06-18",
+                      currency: "AUD", gross: "100", paygw: "20", net: "80"}.freeze,
     encryption_metadata: {iv: "\0".b * 12, tag: "\0".b * 16}
   }.freeze
 
@@ -23,6 +24,23 @@ class ValidationTest < Minitest::Test
     assert_empty batch[2]
   end
 
+  # v1 has no local rules any more: it passes through like any unknown schema
+  # and the API rejects it.
+  def test_v1_schemas_pass_through_like_unknown_schemas
+    %w[au.payslip.v1 nz.payslip.v1].each do |schema|
+      payslip = {period_end: "2026-06-15", gross_cents: 120_000}
+      wire = Verifiabl::Issuer::Serialization.registration_to_wire(**VALID.merge(schema:, payslip_non_pii: payslip))
+      assert_equal schema, wire.fetch("schema")
+      assert_equal({"period_end" => "2026-06-15", "gross_cents" => 120_000}, wire.fetch("payslip_non_pii"))
+
+      batch = Verifiabl::Issuer::Serialization.prepare_batch(
+        records: [VALID.merge(schema:, payslip_non_pii: payslip, verifiabl_reference: "AbCdEfGhIjKlMnOpQrStUv")]
+      )
+      assert_equal schema, batch.first.fetch("records").first.fetch("schema")
+      assert_empty batch[2]
+    end
+  end
+
   def test_v2_rejects_unknown_fields_at_every_depth
     %w[au.payslip.v2 nz.payslip.v2].each do |schema|
       [{"employee_name" => "Jane"}, {"hourly" => {"hours" => "76", "employee_name" => "Jane"}},
@@ -30,6 +48,18 @@ class ValidationTest < Minitest::Test
         assert_raises(ArgumentError) { Verifiabl::Issuer::NonPiiV2.validate!(schema, payslip) }
       end
       Verifiabl::Issuer::NonPiiV2.validate!(schema, {"gross" => "100", "payment_date" => "not a date"})
+    end
+  end
+
+  # AU lump sum and ETP codes are known fields; the API checks which line type may carry each.
+  def test_v2_accepts_au_lump_sum_and_etp_types_and_rejects_them_on_nz
+    au = {"earnings" => [{"type" => "lump_sum", "lump_sum_type" => "b", "amount" => "1"},
+      {"type" => "etp", "etp_type" => "death_trustee", "etp_component" => "tax_free", "amount" => "1"}]}
+    Verifiabl::Issuer::NonPiiV2.validate!("au.payslip.v2", au)
+    [{"type" => "lump_sum", "lump_sum_type" => "b", "amount" => "1"},
+      {"type" => "etp", "etp_type" => "redundancy", "amount" => "1"},
+      {"type" => "etp", "etp_component" => "taxable", "amount" => "1"}].each do |line|
+      assert_raises(ArgumentError) { Verifiabl::Issuer::NonPiiV2.validate!("nz.payslip.v2", {"earnings" => [line]}) }
     end
   end
 
@@ -78,7 +108,7 @@ class ValidationTest < Minitest::Test
     invalid = [
       [:schema, "AU"],
       [:issued_at, "yesterday"],
-      [:payslip_non_pii, {period_start: "2026-02-30"}],
+      [:payslip_non_pii, VALID[:payslip_non_pii].merge(period_start: "2026-02-30")],
       [:encryption_metadata, {iv: "short", tag: "\0".b * 16}],
       [:encryption_metadata, {iv: "A" * 12, tag: "\0".b * 16}],
       [:encryption_metadata, {iv: 12, tag: "\0".b * 16}],
@@ -94,7 +124,7 @@ class ValidationTest < Minitest::Test
 
   def test_rejects_symbol_and_string_key_collisions
     registration = VALID.merge(
-      payslip_non_pii: {period_start: "2026-06-01"}.merge("period_start" => "not-a-date"),
+      payslip_non_pii: VALID[:payslip_non_pii].merge("period_start" => "not-a-date"),
       encryption_metadata: {iv: "\0".b * 12, tag: "\0".b * 16}.merge("iv" => "invalid")
     )
 
@@ -118,13 +148,7 @@ class ValidationTest < Minitest::Test
      ((schema == "au.payslip.v2") ? :paygw : :paye) => "20"}.merge(extras)
   end
 
-  def test_period_start_is_optional_only_for_v2_schemas
-    assert_raises(ArgumentError) do
-      Verifiabl::Issuer::Serialization.registration_to_wire(
-        **VALID.merge(payslip_non_pii: {period_end: "2026-06-15"})
-      )
-    end
-
+  def test_period_start_is_optional_for_v2_schemas
     %w[au.payslip.v2 nz.payslip.v2].each do |schema|
       wire = Verifiabl::Issuer::Serialization.registration_to_wire(
         **VALID.merge(schema:, payslip_non_pii: v2_payload(schema))

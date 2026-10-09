@@ -4,6 +4,38 @@ All notable changes to the Verifiabl Ruby SDK will be documented in this file.
 
 ## Unreleased
 
+## [0.5.0] - 2026-10-09
+
+### Added
+
+- AU2 `lump_sum` earnings lines accept `lump_sum_type`
+  (`PayslipCodes::Australian::LUMP_SUM_TYPES`: `a_redundancy` for STP lump sum
+  A type R, `a_other` for A type T, `b`, `d` or `e`), and a new `etp` line takes
+  `etp_type` (`PayslipCodes::Australian::ETP_TYPES`: `redundancy` for ETP code
+  R, `other` for O, `redundancy_split` for S, `other_split` for P,
+  `death_dependant` for D, `death_non_dependant` for N,
+  `death_non_dependant_split` for B or `death_trustee` for T) and
+  `etp_component` (`PayslipCodes::Australian::ETP_COMPONENTS`: `taxable` or
+  `tax_free`). Send the taxable and tax-free components as separate `etp`
+  lines; tax withheld from an ETP is part of `paygw`. Lump sum W stays
+  `return_to_work`, and lump sum U stays `paid_leave` with
+  `unused_on_termination`. The gem sends a `lump_sum` line without a type, and
+  the API accepts that for now. It will require `lump_sum_type` before
+  production, once every issuer is on an SDK release with the lump sum codes.
+
+### Removed
+
+- **Breaking:** removed `au.payslip.v1` and `nz.payslip.v1` registration
+  validation. The gem no longer requires `period_start` for those schemas; it
+  sends them like any other schema without a field tree, and the issuer API
+  rejects them. Send `au.payslip.v2` instead, for example with
+  `Verifiabl::Issuer.prepare_australian_v2_payslip`.
+- **Breaking:** removed the P2 PII writer `Verifiabl::Issuer.format_pii`.
+  Verifiabl now accepts only the AU2 and NZ2 PII formats from issuers. Use
+  `prepare_australian_v2_payslip` or `prepare_new_zealand_v2_payslip`, or for
+  low-level use `format_australian_pii` or `format_new_zealand_pii` with
+  `encrypt_pii`. Payslips already issued with P1 or P2 still verify.
+
 ## [0.4.0] - 2026-10-07
 
 - Add `layout: :horizontal` to local SVG and PNG rendering, with the QR on the

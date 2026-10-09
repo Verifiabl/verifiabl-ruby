@@ -8,80 +8,77 @@ class ProtocolTest < Minitest::Test
   REFERENCE = "AbCdEfGhIjKlMnOpQrStUv"
   CIPHERTEXT = "foobarbazqux".b
 
-  def test_formats_p2_in_permanent_field_order
-    assert_equal(
-      "P2|Zoë Nguyễn|Ingénieure|R&D|53004085616|062-000|12345678|Zoë Nguyễn|",
-      Verifiabl::Issuer.format_pii(
-        employee_name: "Zoë Nguyễn",
-        position: "Ingénieure",
-        department: "R&D",
-        employer_abn: "53004085616",
-        bsb: "062-000",
-        account_number: "12345678",
-        account_name: "Zoë Nguyễn"
-      )
-    )
-  end
+  # AU2 and NZ2 apply the shared PII text profile to every field.
+  TEXT_PROFILE_FORMATTERS = %i[format_australian_pii format_new_zealand_pii].freeze
 
-  def test_omitted_p2_fields_are_empty_segments
-    assert_equal "P2|Jane||||062-000|||", Verifiabl::Issuer.format_pii(employee_name: "Jane", bsb: "062-000")
-  end
-
-  def test_omitted_p2_fields_ignore_hash_defaults
+  def test_omitted_fields_ignore_hash_defaults
     fields = Hash.new("unknown")
     fields[:employee_name] = "Jane"
-    assert_equal "P2|Jane|||||||", Verifiabl::Issuer.format_pii(fields)
+    assert_equal "AU2|Jane|||||||", Verifiabl::Issuer.format_australian_pii(fields)
 
     fields = Hash.new { raise "default proc must not be called" }
     fields["employee_name"] = "Jane"
-    assert_equal "P2|Jane|||||||", Verifiabl::Issuer.format_pii(fields)
+    assert_equal "NZ2|Jane|||||||", Verifiabl::Issuer.format_new_zealand_pii(fields)
   end
 
-  def test_matches_every_canonical_p2_text_vector
-    vectors.fetch("validText").each do |vector|
-      assert_includes Verifiabl::Issuer.format_pii(employee_name: vector.fetch("value")), vector.fetch("value")
-    end
-
-    vectors.fetch("invalidText").each do |vector|
-      value = vector.fetch("codePoints").map { |point| point.to_i(16) }.pack("U*")
-      error = assert_raises(Verifiabl::Issuer::Pii::ValidationError) do
-        Verifiabl::Issuer.format_pii(employee_name: value)
+  def test_matches_every_canonical_text_profile_vector
+    TEXT_PROFILE_FORMATTERS.each do |formatter|
+      vectors.fetch("validText").each do |vector|
+        assert_includes Verifiabl::Issuer.public_send(formatter, employee_name: vector.fetch("value")), vector.fetch("value")
       end
-      expected = (vector.fetch("reason") == "line-separator") ? :control_character : vector.fetch("reason").tr("-", "_").to_sym
-      assert_equal [Verifiabl::Issuer::Pii::Violation.new(field: :employee_name, reason: expected)], error.violations
-      refute_includes error.message, value
+
+      vectors.fetch("invalidText").each do |vector|
+        value = vector.fetch("codePoints").map { |point| point.to_i(16) }.pack("U*")
+        error = assert_raises(Verifiabl::Issuer::Pii::ValidationError) do
+          Verifiabl::Issuer.public_send(formatter, employee_name: value)
+        end
+        expected = (vector.fetch("reason") == "line-separator") ? :control_character : vector.fetch("reason").tr("-", "_").to_sym
+        assert_equal [Verifiabl::Issuer::Pii::Violation.new(field: :employee_name, reason: expected)], error.violations
+        refute_includes error.message, value
+      end
     end
   end
 
-  def test_matches_the_canonical_p2_profile
-    assert_equal profile.fetch("profileId"), Verifiabl::Issuer::Pii::PROFILE_ID
+  def test_matches_the_canonical_text_profile
+    assert_equal profile.fetch("profileId"), vectors.fetch("profileId")
     assert_equal profile.fetch("unicodeVersion"), Verifiabl::Issuer::Pii::PROFILE_UNICODE_VERSION
-    assert_equal profile.fetch("writerPayloadMaxUtf8Bytes"), Verifiabl::Issuer::Pii::PAYLOAD_MAX_BYTES
+  end
+
+  def test_rejects_every_canonical_forbidden_code_point
+    ranges = profile.fetch("controlCharacterRanges") + profile.fetch("formatCharacterRanges") +
+      profile.fetch("lineSeparatorCodePoints").map { |point| [point, point] }
+    code_points = ranges.flat_map { |first, last| (first.to_i(16)..last.to_i(16)).to_a }
+    TEXT_PROFILE_FORMATTERS.each do |formatter|
+      code_points.each do |code_point|
+        assert_raises(Verifiabl::Issuer::Pii::ValidationError) do
+          Verifiabl::Issuer.public_send(formatter, employee_name: [code_point].pack("U"))
+        end
+      end
+    end
   end
 
   def test_rejects_canonical_invalid_utf8_vectors
-    vectors.fetch("invalidUtf8").each do |vector|
-      bytes = [vector.fetch("bytesHex")].pack("H*")
-      error = assert_raises(Verifiabl::Issuer::Pii::ValidationError) do
-        Verifiabl::Issuer.format_pii(employee_name: bytes)
+    TEXT_PROFILE_FORMATTERS.each do |formatter|
+      vectors.fetch("invalidUtf8").each do |vector|
+        bytes = [vector.fetch("bytesHex")].pack("H*")
+        error = assert_raises(Verifiabl::Issuer::Pii::ValidationError) do
+          Verifiabl::Issuer.public_send(formatter, employee_name: bytes)
+        end
+        assert_equal :invalid_unicode, error.violations.first.reason
       end
-      assert_equal :invalid_unicode, error.violations.first.reason
     end
   end
 
   def test_rejects_canonical_unpaired_utf16_surrogates
-    vectors.fetch("invalidUtf16").each do |vector|
-      text = vector.fetch("codeUnits").pack("n*").force_encoding(Encoding::UTF_16BE)
-      error = assert_raises(Verifiabl::Issuer::Pii::ValidationError) do
-        Verifiabl::Issuer.format_pii(employee_name: text)
+    TEXT_PROFILE_FORMATTERS.each do |formatter|
+      vectors.fetch("invalidUtf16").each do |vector|
+        text = vector.fetch("codeUnits").pack("n*").force_encoding(Encoding::UTF_16BE)
+        error = assert_raises(Verifiabl::Issuer::Pii::ValidationError) do
+          Verifiabl::Issuer.public_send(formatter, employee_name: text)
+        end
+        assert_equal :invalid_unicode, error.violations.first.reason
       end
-      assert_equal :invalid_unicode, error.violations.first.reason
     end
-  end
-
-  def test_enforces_complete_p2_utf8_byte_limit
-    assert_equal 1024, Verifiabl::Issuer.format_pii(employee_name: "a" * 1014).bytesize
-    assert_raises(RangeError) { Verifiabl::Issuer.format_pii(employee_name: "a" * 1015) }
   end
 
   def test_formats_australian_pii_in_permanent_au2_order
@@ -143,7 +140,7 @@ class ProtocolTest < Minitest::Test
 
   def test_all_pii_formatters_report_the_same_field_validation_error
     value = "Synthetic|Value"
-    %i[format_pii format_australian_pii format_new_zealand_pii].each do |formatter|
+    TEXT_PROFILE_FORMATTERS.each do |formatter|
       error = assert_raises(Verifiabl::Issuer::Pii::ValidationError) do
         Verifiabl::Issuer.public_send(formatter, employee_name: value)
       end
@@ -203,7 +200,7 @@ class ProtocolTest < Minitest::Test
 
   def test_aes_256_gcm_round_trip_matches_verifier_shape
     key = (0...32).to_a.pack("C*")
-    plaintext = Verifiabl::Issuer.format_pii(employee_name: "給与明細")
+    plaintext = Verifiabl::Issuer.format_australian_pii(employee_name: "給与明細")
     encrypted = Verifiabl::Issuer.encrypt_pii(plaintext, key)
     metadata = encrypted.encryption_metadata
 
@@ -224,7 +221,7 @@ class ProtocolTest < Minitest::Test
 
   def test_aes_256_gcm_rejects_tampered_ciphertext
     key = "k" * 32
-    encrypted = Verifiabl::Issuer.encrypt_pii("P2|Jane||||||||", key)
+    encrypted = Verifiabl::Issuer.encrypt_pii("AU2|Jane|||||||", key)
     ciphertext = encrypted.encrypted_pii.dup
     ciphertext.setbyte(0, ciphertext.getbyte(0) ^ 0x01)
 
@@ -234,7 +231,7 @@ class ProtocolTest < Minitest::Test
   end
 
   def test_aes_256_gcm_only_decrypts_with_the_issuing_provider_key
-    encrypted = Verifiabl::Issuer.encrypt_pii("P2|Jane||||||||", "k" * 32)
+    encrypted = Verifiabl::Issuer.encrypt_pii("AU2|Jane|||||||", "k" * 32)
 
     assert_raises(OpenSSL::Cipher::CipherError) do
       decrypt(encrypted.encrypted_pii, encrypted.encryption_metadata, "x" * 32)
@@ -244,7 +241,7 @@ class ProtocolTest < Minitest::Test
   def test_aes_256_gcm_rejects_keys_that_are_not_32_bytes
     ["", "k" * 16, "k" * 31, "k" * 33, "k" * 64].each do |key|
       error = assert_raises(ArgumentError) do
-        Verifiabl::Issuer.encrypt_pii("P2||||||||", key)
+        Verifiabl::Issuer.encrypt_pii("AU2||||||||", key)
       end
       assert_includes error.message, "32 bytes"
     end
@@ -252,8 +249,8 @@ class ProtocolTest < Minitest::Test
 
   def test_aes_256_gcm_uses_fresh_ivs_and_ciphertext
     key = "k" * 32
-    first = Verifiabl::Issuer.encrypt_pii("P2||||||||", key)
-    second = Verifiabl::Issuer.encrypt_pii("P2||||||||", key)
+    first = Verifiabl::Issuer.encrypt_pii("AU2||||||||", key)
+    second = Verifiabl::Issuer.encrypt_pii("AU2||||||||", key)
     refute_equal first.encryption_metadata.fetch(:iv), second.encryption_metadata.fetch(:iv)
     refute_equal first.encrypted_pii, second.encrypted_pii
   end
@@ -305,15 +302,16 @@ class ProtocolTest < Minitest::Test
 
   def test_serializes_a_representative_registration
     wire = Verifiabl::Issuer::Serialization.registration_to_wire(
-      schema: "au.payslip.v1",
+      schema: "au.payslip.v2",
       issued_at: "2026-06-11T00:00:00Z",
-      payslip_non_pii: {period_start: "2026-06-01", gross_cents: 120_000, ytd: {taxable_cents: 500_000}},
+      payslip_non_pii: {period_start: "2026-06-01", period_end: "2026-06-15", payment_date: "2026-06-18",
+                        currency: "AUD", gross: "1200.00", paygw: "200.00", net: "1000.00", ytd: {taxable: "5000.00"}},
       encryption_metadata: {iv: "\0".b * 12, tag: "\0".b * 16}
     )
 
     assert_equal "2026-06-11T00:00:00Z", wire.fetch("issued_at")
-    assert_equal 120_000, wire.fetch("payslip_non_pii").fetch("gross_cents")
-    assert_equal 500_000, wire.fetch("payslip_non_pii").fetch("ytd").fetch("taxable_cents")
+    assert_equal "1200.00", wire.fetch("payslip_non_pii").fetch("gross")
+    assert_equal "5000.00", wire.fetch("payslip_non_pii").fetch("ytd").fetch("taxable")
     assert_equal "AAAAAAAAAAAAAAAA", wire.fetch("encryption_metadata").fetch("iv")
     assert_equal "AAAAAAAAAAAAAAAAAAAAAA", wire.fetch("encryption_metadata").fetch("tag")
     assert JSON.generate(wire)

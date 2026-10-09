@@ -8,7 +8,7 @@ class IssuanceConformanceTest < Minitest::Test
 
   def test_matches_every_deterministic_issuance_stage_byte_for_byte
     vectors.fetch("valid").each do |vector|
-      plaintext = Verifiabl::Issuer.format_pii(snake_case_fields(vector.fetch("fields")))
+      plaintext = Verifiabl::Issuer.format_australian_pii(snake_case_fields(vector.fetch("fields")))
       assert_equal vector.fetch("plaintext"), plaintext, vector.fetch("id")
       assert_equal vector.fetch("plaintextUtf8Hex"), plaintext.unpack1("H*"), vector.fetch("id")
 
@@ -74,7 +74,7 @@ class IssuanceConformanceTest < Minitest::Test
 
   def snake_case_fields(fields)
     fields.to_h do |name, value|
-      [name.gsub(/([a-z0-9])([A-Z])/, "\\1_\\2").downcase.to_sym, value]
+      [name.gsub(/([a-z0-9])([A-Z])/, "\\1_\\2").downcase.to_sym, value.is_a?(Hash) ? snake_case_fields(value) : value]
     end
   end
 end
