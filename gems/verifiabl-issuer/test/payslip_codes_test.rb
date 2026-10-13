@@ -7,10 +7,10 @@ class PayslipCodesTest < Minitest::Test
     expected = {
       Verifiabl::Issuer::PayslipCodes::Australian => %i[
         EARNINGS_TYPES PAID_LEAVE_TYPES ALLOWANCE_TYPES OTHER_ALLOWANCE_CATEGORIES LUMP_SUM_TYPES ETP_TYPES
-        ETP_COMPONENTS PAY_FREQUENCIES
+        ETP_COMPONENTS PAY_FREQUENCIES BASE_RATE_PERIODS
       ],
       Verifiabl::Issuer::PayslipCodes::NewZealand => %i[
-        EARNINGS_TYPES PAID_LEAVE_TYPES ALLOWANCE_TYPES LEAVE_BALANCE_UNITS
+        EARNINGS_TYPES PAID_LEAVE_TYPES ALLOWANCE_TYPES LEAVE_BALANCE_UNITS BASE_RATE_PERIODS
       ]
     }
     expected.each do |namespace, names|

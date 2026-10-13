@@ -40,6 +40,10 @@ module Verifiabl
         PAY_FREQUENCIES = %w[
           weekly fortnightly monthly quarterly four_weekly semi_monthly
         ].map!(&:freeze).freeze
+
+        BASE_RATE_PERIODS = %w[
+          hour day year
+        ].map!(&:freeze).freeze
       end
 
       module NewZealand
@@ -61,6 +65,10 @@ module Verifiabl
 
         LEAVE_BALANCE_UNITS = %w[
           hours days weeks
+        ].map!(&:freeze).freeze
+
+        BASE_RATE_PERIODS = %w[
+          hour day week year
         ].map!(&:freeze).freeze
       end
     end

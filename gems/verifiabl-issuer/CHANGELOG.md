@@ -4,6 +4,20 @@ All notable changes to the Verifiabl Ruby SDK will be documented in this file.
 
 ## Unreleased
 
+## [0.6.0] - 2026-10-13
+
+### Changed
+
+- **Breaking:** AU2 and NZ2 payloads replace `hourly` and `annual_rate` with
+  `base_rate`, the base rate the payslip prints apart from the earnings lines:
+  `{amount: "450.00", per: "day"}`. `per` is one of
+  `PayslipCodes::Australian::BASE_RATE_PERIODS` or
+  `PayslipCodes::NewZealand::BASE_RATE_PERIODS`. AU takes `hour`, `day` or
+  `year`; NZ also takes `week`. To migrate, send the printed annual rate as
+  `base_rate` with `per: "year"`, and a printed hourly rate as `base_rate`
+  with `per: "hour"`. Send hours and amounts only on `ordinary` earnings
+  lines. The API still accepts the old fields from earlier SDK versions.
+
 ## [0.5.0] - 2026-10-09
 
 ### Added
