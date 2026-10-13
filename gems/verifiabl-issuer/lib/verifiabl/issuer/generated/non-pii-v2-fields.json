@@ -13,12 +13,10 @@
     "employment_basis": null,
     "engagement_type": null,
     "award": null,
-    "hourly": {
-      "ordinary_rate": "decimal",
-      "hours": "decimal",
-      "amount": "decimal"
+    "base_rate": {
+      "amount": "decimal",
+      "per": null
     },
-    "annual_rate": "decimal",
     "taxable_gross": "decimal",
     "stsl_withholding": "decimal",
     "earnings": [
@@ -82,12 +80,10 @@
     "tax_code": null,
     "employment_type": null,
     "hours_paid": "decimal",
-    "hourly": {
-      "ordinary_rate": "decimal",
-      "hours": "decimal",
-      "amount": "decimal"
+    "base_rate": {
+      "amount": "decimal",
+      "per": null
     },
-    "annual_rate": "decimal",
     "earnings_not_liable_for_acc": "decimal",
     "earnings": [
       {

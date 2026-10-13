@@ -43,7 +43,7 @@ class ValidationTest < Minitest::Test
 
   def test_v2_rejects_unknown_fields_at_every_depth
     %w[au.payslip.v2 nz.payslip.v2].each do |schema|
-      [{"employee_name" => "Jane"}, {"hourly" => {"hours" => "76", "employee_name" => "Jane"}},
+      [{"employee_name" => "Jane"}, {"base_rate" => {"amount" => "76", "employee_name" => "Jane"}},
         {"deductions" => [{"account_name" => "Jane"}]}].each do |payslip|
         assert_raises(ArgumentError) { Verifiabl::Issuer::NonPiiV2.validate!(schema, payslip) }
       end
@@ -162,12 +162,12 @@ class ValidationTest < Minitest::Test
       wire = Verifiabl::Issuer::Serialization.registration_to_wire(
         **VALID.merge(
           schema: Verifiabl::Issuer::AUSTRALIAN_PAYSLIP_V2_SCHEMA,
-          payslip_non_pii: v2_payload("au.payslip.v2", gross:, hourly: {ordinary_rate: "47.3684", hours: "-1.5", amount: gross})
+          payslip_non_pii: v2_payload("au.payslip.v2", gross:, base_rate: {amount: gross, per: "hour"})
         )
       )
 
       assert_equal gross, wire.dig("payslip_non_pii", "gross")
-      assert_equal({"ordinary_rate" => "47.3684", "hours" => "-1.5", "amount" => gross}, wire.dig("payslip_non_pii", "hourly"))
+      assert_equal({"amount" => gross, "per" => "hour"}, wire.dig("payslip_non_pii", "base_rate"))
     end
   end
 

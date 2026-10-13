@@ -9,7 +9,7 @@ client, RBS signatures, and packed-gem consumer qualification.
 Add the stable release to your bundle:
 
 ```ruby
-gem "verifiabl-issuer", "0.5.0"
+gem "verifiabl-issuer", "0.6.0"
 ```
 
 Then run `bundle install`.
