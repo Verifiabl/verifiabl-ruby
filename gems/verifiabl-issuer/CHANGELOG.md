@@ -4,6 +4,29 @@ All notable changes to the Verifiabl Ruby SDK will be documented in this file.
 
 ## Unreleased
 
+## [1.0.0] - 2026-10-19
+
+First stable release. The public API now follows Semantic Versioning.
+
+### Changed
+
+- **Breaking:** an AU2 `lump_sum` earnings line without a `lump_sum_type` now
+  raises `ArgumentError` before sending. The API still accepts the line from
+  older SDK versions. To migrate, send a `lump_sum_type` from
+  `PayslipCodes::Australian::LUMP_SUM_TYPES` on each lump sum.
+
+- `PayslipCodes::Australian::BASE_RATE_PERIODS` and
+  `PayslipCodes::NewZealand::BASE_RATE_PERIODS` both list every period a
+  payslip prints a rate in: `hour`, `day`, `week`, `fortnight`, `month` and
+  `year`.
+
+### Added
+
+- AU2 `superannuation` lines accept `contribution_type: "other"`, for an
+  employer contribution that is not SG, RESC or salary sacrifice, such as an
+  award or agreement rate above SG. `resc` excludes salary sacrifice, which has
+  its own `salary_sacrifice` line.
+
 ## [0.6.0] - 2026-10-13
 
 ### Changed

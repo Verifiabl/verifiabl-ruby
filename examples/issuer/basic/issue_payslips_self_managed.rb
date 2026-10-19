@@ -8,14 +8,14 @@ require "verifiabl/issuer"
 PAYSLIP = {
   external_id: "PAY-1001",
   pii: {
-    employee_name: "Jane A. Doe",
+    employee_name: "Ana Leota",
     position: "Senior Developer",
     department: "Engineering",
-    employer_name: "Example Payroll Pty Ltd",
+    employer_name: "Example Software Pty Ltd",
     employer_abn: "12 345 678 901",
     bsb: "062-000",
     account_number: "****5678",
-    account_name: "Jane A Doe",
+    account_name: "A Leota",
     address: {lines: ["12 Example St"], suburb: "Sydney", state_or_territory: "NSW", postcode: "2000"}
   },
   non_pii: {

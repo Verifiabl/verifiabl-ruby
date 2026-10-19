@@ -13,12 +13,12 @@ class ProtocolTest < Minitest::Test
 
   def test_omitted_fields_ignore_hash_defaults
     fields = Hash.new("unknown")
-    fields[:employee_name] = "Jane"
-    assert_equal "AU2|Jane|||||||", Verifiabl::Issuer.format_australian_pii(fields)
+    fields[:employee_name] = "Taylor Nguyen"
+    assert_equal "AU2|Taylor Nguyen|||||||", Verifiabl::Issuer.format_australian_pii(fields)
 
     fields = Hash.new { raise "default proc must not be called" }
-    fields["employee_name"] = "Jane"
-    assert_equal "NZ2|Jane|||||||", Verifiabl::Issuer.format_new_zealand_pii(fields)
+    fields["employee_name"] = "Taylor Nguyen"
+    assert_equal "NZ2|Taylor Nguyen|||||||", Verifiabl::Issuer.format_new_zealand_pii(fields)
   end
 
   def test_matches_every_canonical_text_profile_vector
@@ -83,50 +83,50 @@ class ProtocolTest < Minitest::Test
 
   def test_formats_australian_pii_in_permanent_au2_order
     plaintext = Verifiabl::Issuer.format_australian_pii(
-      employee_name: "Jo Worker",
-      position: "Analyst",
+      employee_name: "Taylor Nguyen",
+      position: "Payroll Officer",
       department: "Finance",
-      employer_name: "Acme Pty Ltd",
+      employer_name: "Example Software Pty Ltd",
       employer_abn: "12 345 678 901",
       bsb: "062-000",
       account_number: "****5678",
-      account_name: "J Worker",
+      account_name: "T Nguyen",
       address: {
-        lines: ["A204/11-17 Eve Street"],
-        suburb: "Erskineville",
+        lines: ["12 Example St"],
+        suburb: "Sydney",
         state_or_territory: "NSW",
-        postcode: "2043"
+        postcode: "2000"
       }
     )
 
     assert_equal(
-      "AU2|Jo Worker|Analyst|Finance|12 345 678 901|062-000|****5678|J Worker|" \
-        "A204/11-17 Eve Street, Erskineville NSW 2043",
+      "AU2|Taylor Nguyen|Payroll Officer|Finance|12 345 678 901|062-000|****5678|T Nguyen|" \
+        "12 Example St, Sydney NSW 2000",
       plaintext
     )
-    assert_equal "AU2||||Acme Pty Ltd||||", Verifiabl::Issuer.format_australian_pii(employer_name: "Acme Pty Ltd")
+    assert_equal "AU2||||Example Software Pty Ltd||||", Verifiabl::Issuer.format_australian_pii(employer_name: "Example Software Pty Ltd")
   end
 
   def test_formats_new_zealand_pii_in_permanent_nz2_order
     plaintext = Verifiabl::Issuer.format_new_zealand_pii(
-      employee_name: "Jo Worker",
+      employee_name: "Taylor Nguyen",
       ird_number: "***-***-789",
-      position: "Analyst",
+      position: "Payroll Officer",
       department: "Finance",
-      employer_name: "Acme Limited",
+      employer_name: "Example Software Limited",
       account_number: "**-****-****5678-**",
-      account_name: "J Worker",
+      account_name: "T Nguyen",
       address: {
-        lines: ["Level 2", "10 Lambton Quay"],
-        suburb: "Wellington Central",
+        lines: ["12 Example Street"],
+        suburb: "Te Aro",
         city: "Wellington",
         postcode: "6011"
       }
     )
 
     assert_equal(
-      "NZ2|Jo Worker|***-***-789|Analyst|Finance|Acme Limited|**-****-****5678-**|" \
-        "J Worker|Level 2, 10 Lambton Quay, Wellington Central, Wellington 6011",
+      "NZ2|Taylor Nguyen|***-***-789|Payroll Officer|Finance|Example Software Limited|**-****-****5678-**|" \
+        "T Nguyen|12 Example Street, Te Aro, Wellington 6011",
       plaintext
     )
   end
@@ -221,7 +221,7 @@ class ProtocolTest < Minitest::Test
 
   def test_aes_256_gcm_rejects_tampered_ciphertext
     key = "k" * 32
-    encrypted = Verifiabl::Issuer.encrypt_pii("AU2|Jane|||||||", key)
+    encrypted = Verifiabl::Issuer.encrypt_pii("AU2|Taylor Nguyen|||||||", key)
     ciphertext = encrypted.encrypted_pii.dup
     ciphertext.setbyte(0, ciphertext.getbyte(0) ^ 0x01)
 
@@ -231,7 +231,7 @@ class ProtocolTest < Minitest::Test
   end
 
   def test_aes_256_gcm_only_decrypts_with_the_issuing_provider_key
-    encrypted = Verifiabl::Issuer.encrypt_pii("AU2|Jane|||||||", "k" * 32)
+    encrypted = Verifiabl::Issuer.encrypt_pii("AU2|Taylor Nguyen|||||||", "k" * 32)
 
     assert_raises(OpenSSL::Cipher::CipherError) do
       decrypt(encrypted.encrypted_pii, encrypted.encryption_metadata, "x" * 32)

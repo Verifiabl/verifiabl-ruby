@@ -8,22 +8,22 @@ require "verifiabl/issuer"
 PAYSLIP = {
   external_id: "PAY-1002",
   pii: {
-    employee_name: "Zoë Nguyễn",
+    employee_name: "Ana Leota",
     ird_number: "***-***-***",
-    position: "Product Designer",
-    department: "Product",
-    employer_name: "Example Payroll NZ Ltd",
+    position: "Senior Developer",
+    department: "Engineering",
+    employer_name: "Example Software Limited",
     account_number: "**-****-*******-**",
-    account_name: "Zoë Nguyễn",
-    address: {lines: ["44 Harbour Rd"], suburb: "Parnell", city: "Auckland", postcode: "1052"}
+    account_name: "A Leota",
+    address: {lines: ["12 Example Street"], suburb: "Te Aro", city: "Wellington", postcode: "6011"}
   },
   non_pii: {
     period_end: "2026-08-31",
     payment_date: "2026-09-04",
     currency: "NZD",
-    gross: "7600.00",
-    paye: "1710.00",
-    net: "5890.00"
+    gross: "9000.00",
+    paye: "2283.96",
+    net: "6716.04"
   }
 }.freeze
 

@@ -65,14 +65,14 @@ Dir.mktmpdir("verifiabl-basic-example-") do |directory|
       "currency" => currency,
       "gross" => gross,
       tax_field => tax,
-      "net" => (currency == "AUD") ? "6750.00" : "5890.00"
+      "net" => (currency == "AUD") ? "6750.00" : "6716.04"
     }
     abort "Unexpected #{schema} wire fields: #{wire.keys}" unless wire == expected
   RUBY
 
   {
     "issue_payslips_self_managed.rb" => ["au.payslip.v2", "AUD", "9000.00", "paygw", "2250.00"],
-    "issue_payslips_api_managed.rb" => ["nz.payslip.v2", "NZD", "7600.00", "paye", "1710.00"]
+    "issue_payslips_api_managed.rb" => ["nz.payslip.v2", "NZD", "9000.00", "paye", "2283.96"]
   }.each do |source, expected|
     FileUtils.cp(File.join(example, source), directory)
     system(consumer_env, ruby, "-c", source, chdir: directory, exception: true)

@@ -7,7 +7,7 @@ require "verifiabl/issuer"
 def issue_prepared_v2(client, key)
   issued_at = Time.now.utc
   au = Verifiabl::Issuer.prepare_australian_v2_payslip(
-    pii: {employee_name: "Example Employee", employer_name: "Example Pty Ltd"},
+    pii: {employee_name: "Example Employee", employer_name: "Example Software Pty Ltd"},
     payslip_non_pii: {period_end: "2026-08-31", payment_date: "2026-09-04", currency: "AUD",
                       gross: "9000.00", paygw: "2250.00", net: "6750.00"},
     issued_at:, key:
@@ -19,7 +19,7 @@ def issue_prepared_v2(client, key)
   barcode = Verifiabl::Issuer.build_barcode_svg(**au.barcode_parts(result.verifiabl_reference), environment: :sandbox)
 
   nz = Verifiabl::Issuer.prepare_new_zealand_v2_payslip(
-    pii: {employee_name: "Example Employee", employer_name: "Example NZ Ltd"},
+    pii: {employee_name: "Example Employee", employer_name: "Example Software Limited"},
     payslip_non_pii: {period_end: "2026-08-31", payment_date: "2026-09-04", currency: "NZD",
                       gross: "7600.00", paye: "1710.00", net: "5890.00"},
     issued_at:, key:
