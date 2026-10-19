@@ -4,7 +4,8 @@ require "json"
 
 module Verifiabl
   module Issuer
-    # A pre-transport guard for unknown fields and the decimal grammar, not a second implementation of the API contract.
+    # A pre-transport guard for unknown fields, the decimal grammar and AU2 lump sum codes, not a second
+    # implementation of the API contract.
     module NonPiiV2
       FIELDS = JSON.parse(File.read(File.join(__dir__, "generated/non-pii-v2-fields.json"))).freeze
       DECIMAL_PATTERN = /\A-?[0-9]+(?:\.[0-9]+)?\z/
@@ -13,7 +14,19 @@ module Verifiabl
 
       def validate!(schema, payload)
         check!(FIELDS.fetch(schema), payload, "payslip_non_pii")
+        check_lump_sum_types!(payload) if schema == AUSTRALIAN_PAYSLIP_V2_SCHEMA
       end
+
+      # The API still accepts a bare lump sum from older SDKs, but a lump sum without its STP2 code
+      # cannot be categorised, so this SDK requires the code before sending.
+      def check_lump_sum_types!(payload)
+        Array(payload["earnings"]).each_with_index do |line, index|
+          next unless line["type"] == "lump_sum" && line["lump_sum_type"].nil?
+
+          raise ArgumentError, "payslip_non_pii.earnings[#{index}].lump_sum_type is required on a lump_sum line"
+        end
+      end
+      private_class_method :check_lump_sum_types!
 
       def check!(allowed, value, path)
         case allowed

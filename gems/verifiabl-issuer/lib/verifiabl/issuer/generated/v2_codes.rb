@@ -42,7 +42,7 @@ module Verifiabl
         ].map!(&:freeze).freeze
 
         BASE_RATE_PERIODS = %w[
-          hour day year
+          hour day week fortnight month year
         ].map!(&:freeze).freeze
       end
 
@@ -68,7 +68,7 @@ module Verifiabl
         ].map!(&:freeze).freeze
 
         BASE_RATE_PERIODS = %w[
-          hour day week year
+          hour day week fortnight month year
         ].map!(&:freeze).freeze
       end
     end

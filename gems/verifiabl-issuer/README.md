@@ -9,7 +9,7 @@ client, RBS signatures, and packed-gem consumer qualification.
 Add the stable release to your bundle:
 
 ```ruby
-gem "verifiabl-issuer", "0.6.0"
+gem "verifiabl-issuer", "1.0.0"
 ```
 
 Then run `bundle install`.
@@ -151,14 +151,14 @@ provider_encryption_key = Base64.strict_decode64(
 )
 prepared = Verifiabl::Issuer.prepare_australian_v2_payslip(
   pii: {
-    employee_name: "Jane A. Doe",
-    employer_name: "Example Payroll Pty Ltd",
+    employee_name: "Ana Leota",
+    employer_name: "Example Software Pty Ltd",
     employer_abn: "12 345 678 901",
-    address: {lines: ["A204/11-17 Eve Street"], suburb: "Erskineville", state_or_territory: "NSW", postcode: "2043"}
+    address: {lines: ["12 Example St"], suburb: "Sydney", state_or_territory: "NSW", postcode: "2000"}
   },
   payslip_non_pii: {
     period_end: "2026-05-31", payment_date: "2026-06-04", currency: "AUD",
-    gross: "8125.00", paygw: "2030.00", net: "6095.00"
+    gross: "9000.00", paygw: "2250.00", net: "6750.00"
   },
   issued_at: Time.now.utc,
   key: provider_encryption_key
@@ -223,8 +223,9 @@ nz::LEAVE_BALANCE_UNITS # => ["hours", "days", "weeks"]
 both jurisdictions. An AU2 `lump_sum` line takes a `lump_sum_type` from
 `LUMP_SUM_TYPES`, and an `etp` line takes an `etp_type` from `ETP_TYPES` and
 an `etp_component` from `ETP_COMPONENTS`. Use their strings in your normal
-payslip hash; the lists do not restrict input or add local enum/variant
-validation. The API may accept a new code before this gem is updated.
+payslip hash; the lists do not restrict input or add local enum validation,
+and the API may accept a new code before this gem is updated. The gem raises
+before sending an AU2 `lump_sum` line without a `lump_sum_type`.
 Printed-text fields such as `tax_code` and `pay_cycle` are not code sets.
 
 ### Self-managed barcode flow
@@ -244,14 +245,14 @@ require "verifiabl/issuer"
 PAYSLIP = {
   external_id: "PAY-1001",
   pii: {
-    employee_name: "Jane A. Doe",
+    employee_name: "Ana Leota",
     position: "Senior Developer",
     department: "Engineering",
-    employer_name: "Example Payroll Pty Ltd",
+    employer_name: "Example Software Pty Ltd",
     employer_abn: "12 345 678 901",
     bsb: "062-000",
     account_number: "****5678",
-    account_name: "Jane A Doe",
+    account_name: "A Leota",
     address: {lines: ["12 Example St"], suburb: "Sydney", state_or_territory: "NSW", postcode: "2000"}
   },
   non_pii: {
@@ -320,22 +321,22 @@ require "verifiabl/issuer"
 PAYSLIP = {
   external_id: "PAY-1002",
   pii: {
-    employee_name: "Zoë Nguyễn",
+    employee_name: "Ana Leota",
     ird_number: "***-***-***",
-    position: "Product Designer",
-    department: "Product",
-    employer_name: "Example Payroll NZ Ltd",
+    position: "Senior Developer",
+    department: "Engineering",
+    employer_name: "Example Software Limited",
     account_number: "**-****-*******-**",
-    account_name: "Zoë Nguyễn",
-    address: {lines: ["44 Harbour Rd"], suburb: "Parnell", city: "Auckland", postcode: "1052"}
+    account_name: "A Leota",
+    address: {lines: ["12 Example Street"], suburb: "Te Aro", city: "Wellington", postcode: "6011"}
   },
   non_pii: {
     period_end: "2026-08-31",
     payment_date: "2026-09-04",
     currency: "NZD",
-    gross: "7600.00",
-    paye: "1710.00",
-    net: "5890.00"
+    gross: "9000.00",
+    paye: "2283.96",
+    net: "6716.04"
   }
 }.freeze
 
@@ -434,7 +435,7 @@ Verifiabl:
 
 ```ruby
 plaintext = Verifiabl::Issuer.format_australian_pii(
-  employee_name: "Jane Doe",
+  employee_name: "Ana Leota",
   employer_abn: "53004085616",
   address: {lines: ["12 Example St"], suburb: "Sydney", state_or_territory: "NSW", postcode: "2000"}
 )

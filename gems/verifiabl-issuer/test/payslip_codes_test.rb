@@ -43,5 +43,7 @@ class PayslipCodesTest < Minitest::Test
     assert_includes nz::EARNINGS_TYPES, "overtime"
     assert_includes nz::PAID_LEAVE_TYPES, "annual_holiday"
     assert_includes nz::LEAVE_BALANCE_UNITS, "hours"
+    assert_equal %w[hour day week fortnight month year], au::BASE_RATE_PERIODS
+    assert_equal au::BASE_RATE_PERIODS, nz::BASE_RATE_PERIODS
   end
 end

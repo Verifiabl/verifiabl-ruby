@@ -562,7 +562,7 @@ class ClientTest < Minitest::Test
     requests = []
     good_reference = "Xk2mP9qRsT4uVwYzAbCdEf"
     bad = registration.merge(schema: "au.payslip.v2", verifiabl_reference: "AbCdEfGhIjKlMnOpQrStUv", external_id: "bad-1",
-      payslip_non_pii: {period_end: "2026-06-15", currency: "AUD", gross: {employee_name: "Jane"}})
+      payslip_non_pii: {period_end: "2026-06-15", currency: "AUD", gross: {employee_name: "Taylor Nguyen"}})
     good = registration.merge(verifiabl_reference: good_reference)
     client = build_client(lambda do |**request|
       requests << request
@@ -586,7 +586,7 @@ class ClientTest < Minitest::Test
   def test_all_invalid_v2_batch_records_do_not_fetch_a_token
     calls = []
     invalid = registration.merge(schema: "au.payslip.v2", verifiabl_reference: "AbCdEfGhIjKlMnOpQrStUv",
-      payslip_non_pii: {employee_name: "Jane"})
+      payslip_non_pii: {employee_name: "Taylor Nguyen"})
     client = build_client(lambda do |**request|
       calls << request
       raise "unexpected network request"

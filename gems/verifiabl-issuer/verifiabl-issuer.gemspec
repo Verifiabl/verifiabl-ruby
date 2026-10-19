@@ -17,7 +17,7 @@ Gem::Specification.new do |spec|
   spec.metadata = {
     "bug_tracker_uri" => "https://github.com/Verifiabl/verifiabl-ruby/issues",
     "changelog_uri" => "https://github.com/Verifiabl/verifiabl-ruby/blob/main/gems/verifiabl-issuer/CHANGELOG.md",
-    "documentation_uri" => "https://docs.verifiabl.io/payroll-providers",
+    "documentation_uri" => "https://docs.verifiabl.io/issuers",
     "homepage_uri" => spec.homepage,
     "source_code_uri" => "https://github.com/Verifiabl/verifiabl-ruby"
   }

@@ -43,8 +43,8 @@ class ValidationTest < Minitest::Test
 
   def test_v2_rejects_unknown_fields_at_every_depth
     %w[au.payslip.v2 nz.payslip.v2].each do |schema|
-      [{"employee_name" => "Jane"}, {"base_rate" => {"amount" => "76", "employee_name" => "Jane"}},
-        {"deductions" => [{"account_name" => "Jane"}]}].each do |payslip|
+      [{"employee_name" => "Taylor Nguyen"}, {"base_rate" => {"amount" => "76", "employee_name" => "Taylor Nguyen"}},
+        {"deductions" => [{"account_name" => "Taylor Nguyen"}]}].each do |payslip|
         assert_raises(ArgumentError) { Verifiabl::Issuer::NonPiiV2.validate!(schema, payslip) }
       end
       Verifiabl::Issuer::NonPiiV2.validate!(schema, {"gross" => "100", "payment_date" => "not a date"})
@@ -63,17 +63,26 @@ class ValidationTest < Minitest::Test
     end
   end
 
+  def test_v2_requires_a_lump_sum_type_on_an_au_lump_sum
+    [{"type" => "lump_sum", "amount" => "1"}, {"type" => "lump_sum", "lump_sum_type" => nil, "amount" => "1"}].each do |line|
+      error = assert_raises(ArgumentError) do
+        Verifiabl::Issuer::NonPiiV2.validate!("au.payslip.v2", {"earnings" => [{"type" => "ordinary", "amount" => "1"}, line]})
+      end
+      assert_equal "payslip_non_pii.earnings[1].lump_sum_type is required on a lump_sum line", error.message
+    end
+  end
+
   def test_v2_rejects_containers_at_scalar_leaves_but_defers_scalar_values
     %w[au.payslip.v2 nz.payslip.v2].each do |schema|
-      [{payment_date: {employee_name: "Jane"}},
-        {payment_date: [{employee_name: "Jane"}]}].each do |payslip|
+      [{payment_date: {employee_name: "Taylor Nguyen"}},
+        {payment_date: [{employee_name: "Taylor Nguyen"}]}].each do |payslip|
         error = assert_raises(ArgumentError) do
           Verifiabl::Issuer::Serialization.registration_to_wire(
             **VALID.merge(schema:, payslip_non_pii: v2_payload(schema, payslip))
           )
         end
         assert_match(/must be a scalar/, error.message)
-        refute_includes error.message, "Jane"
+        refute_includes error.message, "Taylor Nguyen"
       end
 
       wire = Verifiabl::Issuer::Serialization.registration_to_wire(
@@ -86,7 +95,7 @@ class ValidationTest < Minitest::Test
   def test_v2_numbers_must_be_plain_decimal_strings_before_transport
     %w[au.payslip.v2 nz.payslip.v2].each do |schema|
       ["", "1e3", "+1", "1,234.56", "$1.00", "(1.00)", "1.", ".5", "1.5\n", "\n1.5", "١", 1234, 12.5,
-        BigDecimal("1.5"), nil, {value: "1.50"}, {employee_name: "Jane"}, ["1"]].each do |gross|
+        BigDecimal("1.5"), nil, {value: "1.50"}, {employee_name: "Taylor Nguyen"}, ["1"]].each do |gross|
         error = assert_raises(ArgumentError, "#{schema} #{gross.inspect}") do
           Verifiabl::Issuer::Serialization.registration_to_wire(
             **VALID.merge(schema:, payslip_non_pii: v2_payload(schema, gross:))
