@@ -45,9 +45,9 @@ class ValidationTest < Minitest::Test
     %w[au.payslip.v2 nz.payslip.v2].each do |schema|
       [{"employee_name" => "Taylor Nguyen"}, {"base_rate" => {"amount" => "76", "employee_name" => "Taylor Nguyen"}},
         {"deductions" => [{"account_name" => "Taylor Nguyen"}]}].each do |payslip|
-        assert_raises(ArgumentError) { Verifiabl::Issuer::NonPiiV2.validate!(schema, payslip) }
+        assert_raises(ArgumentError) { Verifiabl::Issuer::NonPiiV2.to_wire!(schema, payslip) }
       end
-      Verifiabl::Issuer::NonPiiV2.validate!(schema, {"gross" => "100", "payment_date" => "not a date"})
+      Verifiabl::Issuer::NonPiiV2.to_wire!(schema, {"gross" => "100", "payment_date" => "not a date"})
     end
   end
 
@@ -55,21 +55,47 @@ class ValidationTest < Minitest::Test
   def test_v2_accepts_au_lump_sum_and_etp_types_and_rejects_them_on_nz
     au = {"earnings" => [{"type" => "lump_sum", "lump_sum_type" => "b", "amount" => "1"},
       {"type" => "etp", "etp_type" => "death_trustee", "etp_component" => "tax_free", "amount" => "1"}]}
-    Verifiabl::Issuer::NonPiiV2.validate!("au.payslip.v2", au)
+    Verifiabl::Issuer::NonPiiV2.to_wire!("au.payslip.v2", au)
     [{"type" => "lump_sum", "lump_sum_type" => "b", "amount" => "1"},
       {"type" => "etp", "etp_type" => "redundancy", "amount" => "1"},
       {"type" => "etp", "etp_component" => "taxable", "amount" => "1"}].each do |line|
-      assert_raises(ArgumentError) { Verifiabl::Issuer::NonPiiV2.validate!("nz.payslip.v2", {"earnings" => [line]}) }
+      assert_raises(ArgumentError) { Verifiabl::Issuer::NonPiiV2.to_wire!("nz.payslip.v2", {"earnings" => [line]}) }
     end
   end
 
   def test_v2_requires_a_lump_sum_type_on_an_au_lump_sum
     [{"type" => "lump_sum", "amount" => "1"}, {"type" => "lump_sum", "lump_sum_type" => nil, "amount" => "1"}].each do |line|
       error = assert_raises(ArgumentError) do
-        Verifiabl::Issuer::NonPiiV2.validate!("au.payslip.v2", {"earnings" => [{"type" => "ordinary", "amount" => "1"}, line]})
+        Verifiabl::Issuer::NonPiiV2.to_wire!("au.payslip.v2", {"earnings" => [{"type" => "ordinary", "amount" => "1"}, line]})
       end
       assert_equal "payslip_non_pii.earnings[1].lump_sum_type is required on a lump_sum line", error.message
     end
+  end
+
+  def test_v2_lump_sum_type_check_accepts_a_string_or_symbol_type
+    ["lump_sum", :lump_sum].each do |type|
+      bare = v2_payload("au.payslip.v2", earnings: [{type:, amount: "1"}])
+      error = assert_raises(ArgumentError) do
+        Verifiabl::Issuer::Serialization.registration_to_wire(**VALID.merge(schema: "au.payslip.v2", payslip_non_pii: bare))
+      end
+      assert_equal "payslip_non_pii.earnings[0].lump_sum_type is required on a lump_sum line", error.message
+
+      typed = v2_payload("au.payslip.v2", earnings: [{type:, lump_sum_type: "b", amount: "1"}])
+      wire = Verifiabl::Issuer::Serialization.registration_to_wire(**VALID.merge(schema: "au.payslip.v2", payslip_non_pii: typed))
+      assert_equal "b", wire.dig("payslip_non_pii", "earnings", 0, "lump_sum_type")
+    end
+  end
+
+  def test_v2_sends_symbol_codes_as_strings_but_rejects_symbol_amounts
+    payslip = v2_payload("au.payslip.v2", pay_frequency: :weekly, earnings: [{type: :paid_leave, leave_type: :annual, amount: "1"}])
+    wire = Verifiabl::Issuer::Serialization.registration_to_wire(**VALID.merge(schema: "au.payslip.v2", payslip_non_pii: payslip))
+    assert_equal "weekly", wire.dig("payslip_non_pii", "pay_frequency")
+    assert_equal({"type" => "paid_leave", "leave_type" => "annual", "amount" => "1"}, wire.dig("payslip_non_pii", "earnings", 0))
+
+    error = assert_raises(ArgumentError) do
+      Verifiabl::Issuer::Serialization.registration_to_wire(**VALID.merge(schema: "au.payslip.v2", payslip_non_pii: v2_payload("au.payslip.v2", gross: :"100")))
+    end
+    assert_equal "payslip_non_pii.gross must be a plain decimal String, for example \"1234.56\"", error.message
   end
 
   def test_v2_rejects_containers_at_scalar_leaves_but_defers_scalar_values
@@ -182,7 +208,7 @@ class ValidationTest < Minitest::Test
 
   def test_requires_a_supported_v2_currency_before_transport
     %w[au.payslip.v2 nz.payslip.v2].each do |schema|
-      ["XYZ", "aud", "", nil, :AUD, "XTS", "XXX", "XAU", "CLF"].each do |currency|
+      ["XYZ", "aud", "", nil, :aud, "XTS", "XXX", "XAU", "CLF"].each do |currency|
         error = assert_raises(ArgumentError, "#{schema} #{currency.inspect}") do
           Verifiabl::Issuer::Serialization.registration_to_wire(
             **VALID.merge(schema:, payslip_non_pii: v2_payload(schema, currency:))
@@ -197,11 +223,11 @@ class ValidationTest < Minitest::Test
         )
       end
 
-      %w[NZD JPY XAF XOF XCD XPF ZWG].each do |currency|
+      ["NZD", "JPY", "XAF", "XOF", "XCD", "XPF", "ZWG", :AUD].each do |currency|
         wire = Verifiabl::Issuer::Serialization.registration_to_wire(
           **VALID.merge(schema:, payslip_non_pii: v2_payload(schema, currency:))
         )
-        assert_equal currency, wire.dig("payslip_non_pii", "currency")
+        assert_equal currency.to_s, wire.dig("payslip_non_pii", "currency")
       end
     end
   end

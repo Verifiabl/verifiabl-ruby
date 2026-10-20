@@ -12,7 +12,10 @@ module Verifiabl
       def registration_to_wire(schema:, issued_at:, payslip_non_pii:, encryption_metadata:)
         Validation.registration!(schema: schema, issued_at: issued_at, payslip_non_pii: payslip_non_pii, encryption_metadata: encryption_metadata)
         wire_payslip = stringify_keys(payslip_non_pii)
-        NonPiiV2.validate!(schema, wire_payslip) if [AUSTRALIAN_PAYSLIP_V2_SCHEMA, NEW_ZEALAND_PAYSLIP_V2_SCHEMA].include?(schema)
+        if [AUSTRALIAN_PAYSLIP_V2_SCHEMA, NEW_ZEALAND_PAYSLIP_V2_SCHEMA].include?(schema)
+          wire_payslip = NonPiiV2.to_wire!(schema, wire_payslip)
+          Validation.v2_currency!(wire_payslip)
+        end
         {
           "schema" => schema,
           "issued_at" => serialize_time(issued_at),

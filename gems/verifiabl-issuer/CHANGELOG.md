@@ -4,6 +4,20 @@ All notable changes to the Verifiabl Ruby SDK will be documented in this file.
 
 ## Unreleased
 
+## [1.0.1] - 2026-10-20
+
+### Changed
+
+- AU2 and NZ2 codes may be Symbols, such as `currency: :AUD` or
+  `type: :lump_sum`. The gem converts them to Strings before its checks, so
+  every check treats both forms alike. Amounts must still be Strings.
+
+### Fixed
+
+- An AU2 earnings line with `type: :lump_sum` (a Symbol) and no
+  `lump_sum_type` now raises `ArgumentError`, as the String form already did.
+  1.0.0 sent it without the code.
+
 ## [1.0.0] - 2026-10-19
 
 First stable release. The public API now follows Semantic Versioning.
