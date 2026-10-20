@@ -9,7 +9,7 @@ client, RBS signatures, and packed-gem consumer qualification.
 Add the stable release to your bundle:
 
 ```ruby
-gem "verifiabl-issuer", "1.0.0"
+gem "verifiabl-issuer", "1.0.1"
 ```
 
 Then run `bundle install`.
@@ -225,7 +225,8 @@ both jurisdictions. An AU2 `lump_sum` line takes a `lump_sum_type` from
 an `etp_component` from `ETP_COMPONENTS`. Use their strings in your normal
 payslip hash; the lists do not restrict input or add local enum validation,
 and the API may accept a new code before this gem is updated. The gem raises
-before sending an AU2 `lump_sum` line without a `lump_sum_type`.
+before sending an AU2 `lump_sum` line without a `lump_sum_type`. A code may
+also be a Symbol, such as `type: :lump_sum`; the gem sends it as a String.
 Printed-text fields such as `tax_code` and `pay_cycle` are not code sets.
 
 ### Self-managed barcode flow

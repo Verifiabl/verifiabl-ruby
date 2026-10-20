@@ -12,9 +12,11 @@ module Verifiabl
 
       module_function
 
-      def validate!(schema, payload)
-        check!(FIELDS.fetch(schema), payload, "payslip_non_pii")
-        check_lump_sum_types!(payload) if schema == AUSTRALIAN_PAYSLIP_V2_SCHEMA
+      # Returns the payload with Symbol codes as Strings, so later checks see what JSON encoding sends.
+      def to_wire!(schema, payload)
+        wire = convert!(FIELDS.fetch(schema), payload, "payslip_non_pii")
+        check_lump_sum_types!(wire) if schema == AUSTRALIAN_PAYSLIP_V2_SCHEMA
+        wire
       end
 
       # The API still accepts a bare lump sum from older SDKs, but a lump sum without its STP2 code
@@ -28,45 +30,48 @@ module Verifiabl
       end
       private_class_method :check_lump_sum_types!
 
-      def check!(allowed, value, path)
+      def convert!(allowed, value, path)
         case allowed
-        when Hash then check_object!(allowed, value, path)
-        when Array then check_array!(allowed.first, value, path)
-        when "decimal" then check_decimal!(value, path)
-        else check_scalar!(value, path)
+        when Hash then convert_object!(allowed, value, path)
+        when Array then convert_array!(allowed.first, value, path)
+        when "decimal" then decimal!(value, path)
+        else scalar!(value, path)
         end
       end
-      private_class_method :check!
+      private_class_method :convert!
 
-      def check_object!(allowed, value, path)
+      def convert_object!(allowed, value, path)
         raise ArgumentError, "#{path} must be an object" unless value.is_a?(Hash)
 
-        value.each do |key, child|
+        value.to_h do |key, child|
           raise ArgumentError, "#{path}.#{key} is not permitted" unless allowed.key?(key)
 
-          check!(allowed.fetch(key), child, "#{path}.#{key}")
+          [key, convert!(allowed.fetch(key), child, "#{path}.#{key}")]
         end
       end
-      private_class_method :check_object!
+      private_class_method :convert_object!
 
-      def check_array!(allowed, value, path)
+      def convert_array!(allowed, value, path)
         raise ArgumentError, "#{path} must be an array" unless value.is_a?(Array)
 
-        value.each_with_index { |child, index| check!(allowed, child, "#{path}[#{index}]") }
+        value.each_with_index.map { |child, index| convert!(allowed, child, "#{path}[#{index}]") }
       end
-      private_class_method :check_array!
+      private_class_method :convert_array!
 
-      def check_decimal!(value, path)
-        return if value.is_a?(String) && DECIMAL_PATTERN.match?(value)
+      # Amounts stay Strings only, so the SDK never guesses at a number's text.
+      def decimal!(value, path)
+        return value if value.is_a?(String) && DECIMAL_PATTERN.match?(value)
 
         raise ArgumentError, "#{path} must be a plain decimal String, for example \"1234.56\""
       end
-      private_class_method :check_decimal!
+      private_class_method :decimal!
 
-      def check_scalar!(value, path)
+      def scalar!(value, path)
         raise ArgumentError, "#{path} must be a scalar" if value.is_a?(Hash) || value.is_a?(Array)
+
+        value.is_a?(Symbol) ? value.to_s : value
       end
-      private_class_method :check_scalar!
+      private_class_method :scalar!
     end
   end
 end
