@@ -230,7 +230,7 @@ class ProtocolTest < Minitest::Test
     end
   end
 
-  def test_aes_256_gcm_only_decrypts_with_the_issuing_provider_key
+  def test_aes_256_gcm_only_decrypts_with_the_issuers_own_key
     encrypted = Verifiabl::Issuer.encrypt_pii("AU2|Taylor Nguyen|||||||", "k" * 32)
 
     assert_raises(OpenSSL::Cipher::CipherError) do

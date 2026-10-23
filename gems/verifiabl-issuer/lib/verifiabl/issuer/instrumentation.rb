@@ -28,6 +28,12 @@ module Verifiabl
         raise
       end
 
+      # Reports a failure that the SDK recovered from, such as a token store
+      # outage, so it is visible without changing request behaviour.
+      def emit_error(payload, on_error)
+        emit(:error, payload, on_error)
+      end
+
       def emit(type, payload, callback)
         event = payload.freeze
         begin

@@ -9,10 +9,10 @@ sends plaintext PII. They support Ruby 3.3 and newer.
 
 ## Setup
 
-After the stable 1.0.1 release is published, install it from RubyGems:
+After the stable 1.1.0 release is published, install it from RubyGems:
 
 ```sh
-gem install verifiabl-issuer --version 1.0.1
+gem install verifiabl-issuer --version 1.1.0
 cd examples/issuer/basic
 bundle install
 ```
@@ -28,13 +28,13 @@ bundle install
 
 ## Run
 
-Export your sandbox credentials and provider encryption key. The encryption key must be a
+Export your sandbox credentials and issuer encryption key. The encryption key must be a
 Base64-encoded 32-byte key.
 
 ```sh
 export VERIFIABL_CLIENT_ID='your-sandbox-client-id'
 export VERIFIABL_CLIENT_SECRET='your-sandbox-client-secret'
-export VERIFIABL_ENCRYPTION_KEY_BASE64='your-base64-encoded-provider-key'
+export VERIFIABL_ENCRYPTION_KEY_BASE64='your-base64-encoded-issuer-key'
 ```
 
 Run the self-managed AU2 flow to register the payslip and render its SVG locally:

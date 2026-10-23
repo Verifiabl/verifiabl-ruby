@@ -15,7 +15,8 @@ module Verifiabl
         max_retries: 2,
         on_request: nil,
         on_response: nil,
-        on_error: nil
+        on_error: nil,
+        token_store: nil
       }.freeze
       private_constant :DEFAULTS
 

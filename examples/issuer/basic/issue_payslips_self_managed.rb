@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-# snippet:start:ruby.basic-issuance
 require "base64"
 require "fileutils"
 require "verifiabl/issuer"
@@ -36,14 +35,14 @@ issuer = Verifiabl::Issuer::Client.new(
   )
 )
 
-provider_encryption_key = Base64.strict_decode64(
+issuer_encryption_key = Base64.strict_decode64(
   ENV.fetch("VERIFIABL_ENCRYPTION_KEY_BASE64")
 )
 prepared = Verifiabl::Issuer.prepare_australian_v2_payslip(
   pii: PAYSLIP.fetch(:pii),
   payslip_non_pii: PAYSLIP.fetch(:non_pii),
   issued_at: Time.now.utc,
-  key: provider_encryption_key
+  key: issuer_encryption_key
 )
 # Persist prepared.registration and the binary ciphertext from
 # prepared.barcode_parts(prepared.verifiabl_reference).fetch(:encrypted_pii)
@@ -60,4 +59,3 @@ FileUtils.mkdir_p(File.dirname(output_path))
 
 File.write(output_path, barcode.svg)
 puts "Registered #{result.verifiabl_reference} and wrote #{output_path}"
-# snippet:end:ruby.basic-issuance

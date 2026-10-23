@@ -4,6 +4,27 @@ All notable changes to the Verifiabl Ruby SDK will be documented in this file.
 
 ## Unreleased
 
+## [1.1.0] - 2026-10-23
+
+### Added
+
+- `Configuration` accepts `token_store:`, a cache that worker processes
+  share, such as `Rails.cache`. The processes then use one OAuth token
+  instead of one each. The client encrypts each token with a key derived
+  from the client secret before it stores the token. When the stored token
+  is missing or due, one process fetches a new token. The other processes
+  use their current token or wait for the new token. The client does not
+  replace a token that the API rejects less than one minute after its
+  fetch. A store failure counts as a miss. `on_error` gets it as an event
+  with only `token_store:` (`:read`, `:write` or `:claim`) and `error:`.
+
+### Changed
+
+- The OAuth token request has its own 10-second limit within the request's
+  `timeout:` budget.
+- The README now links to the documentation at docs.verifiabl.io instead of
+  repeating it.
+
 ## [1.0.1] - 2026-10-20
 
 ### Changed
