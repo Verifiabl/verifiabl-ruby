@@ -3,7 +3,7 @@
 ## Rules
 
 - Keep gems under `gems/`. The issuer SDK is `gems/verifiabl-issuer`.
-- Support Ruby 3.3 and newer. Do not add Rails or Active Support dependencies or integration layers.
+- Support Ruby 3.3 and newer. Do not add Rails dependencies or integration layers. Active Support may be a development dependency, never a runtime one.
 - Use `rqrcode_core` for QR matrices. Keep deterministic SVG and PNG rendering in Verifiabl code.
 - Keep this exported repository self-contained.
 - Do not edit generated PII profiles, fixtures, QR widths or frame assets.
@@ -30,7 +30,7 @@ Read the relevant documents before edits.
 
 | Task | Read |
 | --- | --- |
-| Development or API reference | [README](README.md) |
-| Issuer API, validation or wire contracts | [Issuer README](gems/verifiabl-issuer/README.md) |
+| Development or API reference | [Development](DEVELOPMENT.md) |
+| Issuer API, validation or wire contracts | [Issuer SDK guide](https://docs.verifiabl.io/issuer-sdk?lang=ruby) |
 | Examples | [Example guide](examples/issuer/basic/README.md) |
 | Packages or releases | Local `.github/workflows/` files and issuer gemspec |

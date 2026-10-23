@@ -89,7 +89,13 @@ module Verifiabl
       attr_reader on_response: Proc?
       attr_reader on_error: Proc?
       attr_reader environment: Symbol
-      def initialize: (?client_id: String?, ?client_secret: String?, ?environment: Symbol | String, ?issuer_base_url: String?, ?token_url: String?, ?timeout: Numeric, ?max_retries: Integer, ?on_request: Proc?, ?on_response: Proc?, ?on_error: Proc?) -> void
+      attr_reader token_store: _TokenStore?
+      def initialize: (?client_id: String?, ?client_secret: String?, ?environment: Symbol | String, ?issuer_base_url: String?, ?token_url: String?, ?timeout: Numeric, ?max_retries: Integer, ?on_request: Proc?, ?on_response: Proc?, ?on_error: Proc?, ?token_store: _TokenStore?) -> void
+    end
+
+    interface _TokenStore
+      def read: (String) -> untyped
+      def write: (String, String, expires_in: Integer, ?unless_exist: bool) -> untyped
     end
 
     interface _TransportResponse

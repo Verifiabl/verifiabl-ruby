@@ -17,6 +17,10 @@ module Verifiabl
       RETRY_BASE_SECONDS = 0.5
       RETRY_MAX_SECONDS = 8.0
       REQUEST_ID_HEADERS = %w[x-request-id request-id x-verifiabl-request-id].freeze
+      SHARED_FETCH_POLL_SECONDS = 0.1
+      SHARED_FETCH_MAX_POLL_SECONDS = 1.0
+      REJECTED_TOKEN_MIN_AGE_SECONDS = 60
+      TOKEN_FETCH_TIMEOUT_SECONDS = 10
 
       def self.request_id(headers)
         REQUEST_ID_HEADERS.each do |name|
@@ -41,11 +45,12 @@ module Verifiabl
         @on_request = configuration.on_request
         @on_response = configuration.on_response
         @on_error = configuration.on_error
+        @shared_token_store = build_shared_token_store(configuration.token_store)
         @token_mutex = Mutex.new
         @process_id = Process.pid
       end
 
-      # Registers non-PII data under a provider-generated reference. When the
+      # Registers non-PII data under an issuer-generated reference. When the
       # caller omits one, generate it once before the request loop so every
       # automatic retry uses the same idempotency key. Callers that need to
       # retry from another process or invocation should generate, persist, and
@@ -124,11 +129,17 @@ module Verifiabl
 
       def send_with_auth(path, body, deadline)
         token = access_token(deadline)
-        response = issuer_request(path, body, token, deadline)
-        return response unless response.status == 401
+        response = issuer_request(path, body, token.value, deadline)
+        return response unless response.status == 401 && replaceable?(token)
 
-        invalidate_token(token, deadline)
-        issuer_request(path, body, access_token(deadline), deadline)
+        invalidate_token(token.value, deadline)
+        issuer_request(path, body, access_token(deadline, rejected: token.value).value, deadline)
+      end
+
+      # A token the API rejects within a minute of its fetch is not replaced:
+      # a replacement would be rejected too, once per request.
+      def replaceable?(token)
+        @clock.call - token.issued_at >= REJECTED_TOKEN_MIN_AGE_SECONDS
       end
 
       def issuer_request(path, body, token, deadline)
@@ -165,21 +176,99 @@ module Verifiabl
         {"content-type" => "application/json", "accept" => "application/json", "user-agent" => "verifiabl-issuer-ruby/#{VERSION} (ruby #{RUBY_VERSION})"}
       end
 
-      def access_token(deadline)
+      # A token the API just rejected is never reused, whichever layer still
+      # holds it: the shared store keeps it until a replacement overwrites it.
+      def access_token(deadline, rejected: nil)
         reset_token_cache_after_fork!
-        now = @clock.call
         cached = @token
-        return cached.value if cached && token_fresh?(cached, now)
+        return cached if usable_token?(cached, @clock.call, rejected)
 
         ensure_before_deadline!(deadline)
         with_token_lock(deadline) do
           ensure_before_deadline!(deadline)
-          now = @clock.call
-          return @token.value if @token && token_fresh?(@token, now)
+          return @token if usable_token?(@token, @clock.call, rejected)
 
-          @token = fetch_token(now, deadline)
-          @token.value
+          @token = shared_token(rejected) || fetch_or_wait(deadline, rejected)
+          # The store owns its timeouts, like a transport adapter, so a slow
+          # store is only noticed afterwards. The token is kept either way: it
+          # was paid for, and the next request can use it.
+          ensure_before_deadline!(deadline)
+          @token
         end
+      end
+
+      # Fresh enough to use without looking for a renewal.
+      def usable_token?(token, now, rejected)
+        token && token.value != rejected && token_fresh?(token, now)
+      end
+
+      # Due for renewal but still accepted by the API.
+      def valid_token?(token, now, rejected)
+        token && token.value != rejected && token.expires_at > now
+      end
+
+      # The store read takes time, so freshness is judged by the clock after
+      # it returns, not before.
+      def shared_token(rejected = nil)
+        token = @shared_token_store&.read(@clock.call)
+        token if usable_token?(token, @clock.call, rejected)
+      end
+
+      # Workers that share a store find its token due, or missing after a
+      # quiet period, at the same time. One claims the fetch. A worker with a
+      # valid token keeps using it. A worker with none polls the store, and
+      # claims the fetch itself if the claim expires. The poll interval
+      # doubles up to one second, so a stalled claimant costs a large fleet
+      # about one store read per worker each second.
+      def fetch_or_wait(deadline, rejected)
+        poll_seconds = SHARED_FETCH_POLL_SECONDS
+        loop do
+          fetch_deadline = token_fetch_deadline(deadline)
+          return fetch_and_share_token(fetch_deadline) if fetch_claim_mine?(deadline, fetch_deadline, rejected)
+          return @token if valid_token?(@token, @clock.call, rejected)
+
+          ensure_before_deadline!(deadline)
+          @sleeper.call([poll_seconds, remaining_time(deadline)].min)
+          poll_seconds = [poll_seconds * 2, SHARED_FETCH_MAX_POLL_SECONDS].min
+          ensure_before_deadline!(deadline)
+          token = shared_token(rejected)
+          return token if token
+        end
+      end
+
+      # True when this process should fetch: there is no store, the API
+      # rejected the stored token, or no process holds the claim. The claim
+      # ends at the token request's deadline, so it covers the time the store
+      # calls take as well. A refused claim is read back: a store that
+      # swallows a backend error returns `false` for the write and `nil` for
+      # the read.
+      def fetch_claim_mine?(deadline, fetch_deadline, rejected)
+        return true if @shared_token_store.nil? || rejected
+
+        ensure_before_deadline!(deadline)
+        return false if @shared_token_store.fetch_claim_held?
+
+        ensure_before_deadline!(deadline)
+        return true unless @shared_token_store.claim_fetch(remaining_time(fetch_deadline).ceil) == false
+
+        ensure_before_deadline!(deadline)
+        !@shared_token_store.fetch_claim_held?
+      end
+
+      # The token request gets its own short limit, so a process that takes
+      # over a lapsed claim still has time to register, and a claim that
+      # outlives a fast fetch expires before the new token is due.
+      def token_fetch_deadline(deadline)
+        [deadline, @monotonic_clock.call + TOKEN_FETCH_TIMEOUT_SECONDS].min
+      end
+
+      # The clock is sampled after the store miss: a token dated from before
+      # a slow read would look older than it is.
+      def fetch_and_share_token(fetch_deadline)
+        now = @clock.call
+        token = fetch_token(now, fetch_deadline)
+        @shared_token_store&.write(token, now)
+        token
       end
 
       def invalidate_token(rejected, deadline)
@@ -204,11 +293,15 @@ module Verifiabl
       # permanently locked copy of the parent's mutex. A child has one thread
       # immediately after fork, so replacing this local state before locking is
       # safe and gives it an independent token cache.
+      #
+      # Each child also inherits the parent's random generator state. A fresh
+      # generator stops children from retrying in lockstep.
       def reset_token_cache_after_fork!
         return if @process_id == Process.pid
 
         @token_mutex = Mutex.new
         @token = nil
+        @random = Random.new
         @process_id = Process.pid
       end
 
@@ -217,9 +310,29 @@ module Verifiabl
         token.expires_at - now > [60, ttl / 2].min
       end
 
+      def build_shared_token_store(backend)
+        return if backend.nil?
+        raise ArgumentError, "token_store must respond to read and write" unless SharedTokenStore.valid_backend?(backend)
+        # Invalid credentials fail at the token fetch, as they do without a store.
+        return unless @client_id.is_a?(String) && @client_secret.is_a?(String)
+
+        SharedTokenStore.new(
+          backend,
+          client_secret: @client_secret.strip,
+          identity: [@token_url, @client_id.strip, @issuer_base_url, ISSUER_SCOPE],
+          on_error: @on_error
+        )
+      end
+
       def fetch_token(now, deadline)
         validate_credentials!
-        response = request(method: :post, url: @token_url, headers: json_headers, body: token_request_body, deadline: deadline)
+        response = request(
+          method: :post,
+          url: @token_url,
+          headers: json_headers,
+          body: token_request_body,
+          deadline: deadline
+        )
         parsed = parse_json(response.body)
         validate_token_response!(response, parsed)
         CachedToken.new(value: parsed["access_token"], issued_at: now, expires_at: now + parsed["expires_in"])
@@ -326,11 +439,18 @@ module Verifiabl
       end
 
       def configure_endpoints(configuration)
-        @client_id = configuration.client_id
-        @client_secret = configuration.client_secret
+        @client_id = frozen_copy(configuration.client_id)
+        @client_secret = frozen_copy(configuration.client_secret)
         origins = Payload.resolve_environment(configuration.environment)
         @token_url = normalize_token_url(configuration.token_url || origins.fetch(:token_url))
         @issuer_base_url = normalize_issuer_base_url(configuration.issuer_base_url || origins.fetch(:issuer_base_url))
+      end
+
+      # The shared store's keys are derived once from these credentials, so the
+      # caller must not be able to change them afterwards: a secret swapped
+      # later would store another account's token under this account's entry.
+      def frozen_copy(value)
+        value.is_a?(String) ? value.dup.freeze : value
       end
 
       def configure_retry_policy(configuration)

@@ -381,7 +381,7 @@
           "scope": "instance",
           "signature": "def register_non_pii: (?verifiabl_reference: String?, schema: String, issued_at: String | Time, payslip_non_pii: Hash[Symbol | String, untyped], encryption_metadata: Hash[Symbol | String, binary]) -> Responses::Registration",
           "documentation": {
-            "summary": "Registers non-PII data under a provider-generated reference. When the\ncaller omits one, generate it once before the request loop so every\nautomatic retry uses the same idempotency key. Callers that need to\nretry from another process or invocation should generate, persist, and\npass the reference explicitly.",
+            "summary": "Registers non-PII data under an issuer-generated reference. When the\ncaller omits one, generate it once before the request loop so every\nautomatic retry uses the same idempotency key. Callers that need to\nretry from another process or invocation should generate, persist, and\npass the reference explicitly.",
             "tags": []
           }
         },
@@ -449,7 +449,7 @@
           "name": "initialize",
           "kind": "method",
           "scope": "instance",
-          "signature": "def initialize: (?client_id: String?, ?client_secret: String?, ?environment: Symbol | String, ?issuer_base_url: String?, ?token_url: String?, ?timeout: Numeric, ?max_retries: Integer, ?on_request: Proc?, ?on_response: Proc?, ?on_error: Proc?) -> void",
+          "signature": "def initialize: (?client_id: String?, ?client_secret: String?, ?environment: Symbol | String, ?issuer_base_url: String?, ?token_url: String?, ?timeout: Numeric, ?max_retries: Integer, ?on_request: Proc?, ?on_response: Proc?, ?on_error: Proc?, ?token_store: _TokenStore?) -> void",
           "documentation": {
             "summary": "",
             "tags": [
@@ -530,6 +530,18 @@
           "scope": "instance",
           "access": "read",
           "signature": "attr_reader timeout: Numeric",
+          "documentation": {
+            "summary": "",
+            "tags": []
+          }
+        },
+        {
+          "path": "Verifiabl::Issuer::Configuration#token_store",
+          "name": "token_store",
+          "kind": "attribute",
+          "scope": "instance",
+          "access": "read",
+          "signature": "attr_reader token_store: _TokenStore?",
           "documentation": {
             "summary": "",
             "tags": []

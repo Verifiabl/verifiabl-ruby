@@ -66,7 +66,7 @@ class ClientTest < Minitest::Test
     end
   end
 
-  def test_sends_a_provider_generated_reference
+  def test_sends_an_issuer_generated_reference
     bodies = []
     client = build_client(lambda do |**request|
       if request.fetch(:url).include?("/oauth/token")
@@ -182,18 +182,22 @@ class ClientTest < Minitest::Test
   def test_refreshes_a_rejected_token_exactly_once
     tokens = %w[token-1 token-2]
     authorizations = []
+    now = Time.utc(2026, 10, 21)
     transport = lambda do |**request|
       if request.fetch(:url).include?("/oauth/token")
         response(200, access_token: tokens.shift, expires_in: 3600)
       else
         authorizations << request.fetch(:headers).fetch("authorization")
-        (authorizations.length == 1) ? response(401, code: "UNAUTHORIZED") : response(200, verifiabl_reference: "AbCdEfGhIjKlMnOpQrStUv")
+        (authorizations.length == 2) ? response(401, code: "UNAUTHORIZED") : response(200, verifiabl_reference: "AbCdEfGhIjKlMnOpQrStUv")
       end
     end
+    client = build_client(transport, clock: -> { now })
 
-    build_client(transport).register_non_pii(verifiabl_reference: "AbCdEfGhIjKlMnOpQrStUv", **registration)
+    client.register_non_pii(verifiabl_reference: "AbCdEfGhIjKlMnOpQrStUv", **registration)
+    now += 61
+    client.register_non_pii(verifiabl_reference: "AbCdEfGhIjKlMnOpQrStUv", **registration)
 
-    assert_equal ["Bearer token-1", "Bearer token-2"], authorizations
+    assert_equal ["Bearer token-1", "Bearer token-1", "Bearer token-2"], authorizations
   end
 
   def test_retries_idempotent_registration_and_honours_retry_after
@@ -397,6 +401,22 @@ class ClientTest < Minitest::Test
     assert_equal [10, 8], budgets
   end
 
+  def test_the_token_request_has_its_own_ten_second_limit
+    budgets = []
+    client = build_client(lambda do |**request|
+      budgets << request.fetch(:timeout)
+      if request.fetch(:url).include?("/oauth/token")
+        response(200, access_token: "token", expires_in: 3600)
+      else
+        response(200, verifiabl_reference: "AbCdEfGhIjKlMnOpQrStUv")
+      end
+    end, timeout: 30, monotonic_clock: -> { 0.0 })
+
+    client.register_non_pii(verifiabl_reference: "AbCdEfGhIjKlMnOpQrStUv", **registration)
+
+    assert_equal [10, 30], budgets
+  end
+
   def test_rejects_response_arriving_after_deadline
     elapsed = 0.0
     calls = 0
@@ -458,13 +478,15 @@ class ClientTest < Minitest::Test
     ready = ConditionVariable.new
     token_fetches = 0
     rejected_calls = 0
+    now = Time.utc(2026, 10, 21)
+    warmed = false
     transport = lambda do |**request|
       if request.fetch(:url).include?("/oauth/token")
         number = mutex.synchronize { token_fetches += 1 }
         response(200, access_token: "token-#{number}", expires_in: 3600)
       else
         authorization = request.fetch(:headers).fetch("authorization")
-        if authorization == "Bearer token-1"
+        if authorization == "Bearer token-1" && warmed
           mutex.synchronize do
             rejected_calls += 1
             ready.broadcast if rejected_calls == 8
@@ -476,7 +498,10 @@ class ClientTest < Minitest::Test
         end
       end
     end
-    client = build_client(transport)
+    client = build_client(transport, clock: -> { now })
+    client.register_non_pii(verifiabl_reference: "AbCdEfGhIjKlMnOpQrStUv", **registration)
+    warmed = true
+    now += 61
 
     threads = 8.times.map do
       Thread.new { client.register_non_pii(verifiabl_reference: "AbCdEfGhIjKlMnOpQrStUv", **registration) }

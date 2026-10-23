@@ -30,11 +30,14 @@ Gem::Specification.new do |spec|
   spec.add_dependency "base64", "~> 0.2"
   spec.add_dependency "rqrcode_core", "~> 2.1"
 
+  # Token store integration tests run against real Active Support cache stores.
+  spec.add_development_dependency "activesupport", "~> 8.1"
   spec.add_development_dependency "bigdecimal", "~> 4.1"
   spec.add_development_dependency "bundler-audit", "~> 0.9"
   spec.add_development_dependency "minitest", "~> 6.0"
   spec.add_development_dependency "rake", "~> 13.0"
   spec.add_development_dependency "rbs", "~> 4.2"
+  spec.add_development_dependency "redis", "~> 6.0"
   spec.add_development_dependency "rubocop", "~> 1.88"
   spec.add_development_dependency "standard", "~> 1.0"
   spec.add_development_dependency "yard", "~> 0.9"

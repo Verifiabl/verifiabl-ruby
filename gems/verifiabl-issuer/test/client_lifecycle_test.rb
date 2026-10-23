@@ -47,7 +47,36 @@ class ClientLifecycleTest < Minitest::Test
     writer&.close
   end
 
+  # Children of a client warmed before the fork must not retry in lockstep.
+  def test_forked_children_draw_their_own_retry_backoff
+    skip "fork is unavailable" unless Process.respond_to?(:fork)
+
+    client = client_with_successful_transport
+    client.register_non_pii(verifiabl_reference: "AbCdEfGhIjKlMnOpQrStUv", **registration)
+
+    delays = 2.times.map { backoff_in_forked_child(client) }
+
+    refute_equal delays.first, delays.last
+  end
+
   private
+
+  def backoff_in_forked_child(client)
+    reader, writer = IO.pipe
+    child_pid = fork do
+      reader.close
+      client.register_non_pii(verifiabl_reference: "AbCdEfGhIjKlMnOpQrStUv", **registration)
+      writer.write(client.send(:backoff, 3).to_s)
+      writer.close
+      exit! 0
+    end
+    writer.close
+    value = reader.read
+    Process.wait(child_pid)
+    Float(value)
+  ensure
+    reader&.close
+  end
 
   def client_with_successful_transport
     configuration = Verifiabl::Issuer::Configuration.new(
