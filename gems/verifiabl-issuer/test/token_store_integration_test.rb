@@ -74,8 +74,8 @@ class TokenStoreIntegrationTest < Minitest::Test
     assert events.all? { |event| event.fetch(:error).is_a?(Redis::BaseConnectionError) }
   end
 
-  # The README tells Rails users to give the SDK its own re-raising store,
-  # because a default Redis cache store turns an outage into a miss. The
+  # The issuer SDK guide tells Rails users to give the SDK its own re-raising
+  # store, because a default Redis cache store turns an outage into a miss. The
   # failed claim must not look like another worker's claim and cause a wait.
   def test_a_redis_outage_is_silent_with_the_default_error_handler
     transport = FakeTransport.new
