@@ -34,10 +34,8 @@ issuer = Verifiabl::Issuer::Client.new(configuration)
 
 ### Share tokens between processes
 
-Each client fetches an OAuth token and keeps it in memory, so each process fetches its own token.
-If you run many worker processes, for example an autoscaled job queue, set `token_store:` to a
-cache that the processes share. In a Rails application, use `Rails.cache` if Redis, Memcached or
-Solid Cache stores its data:
+Each process fetches its own OAuth token. To share one token between worker processes, set
+`token_store:` to a cache that the processes share:
 
 ```ruby
 configuration = Verifiabl::Issuer::Configuration.new(
@@ -47,48 +45,11 @@ configuration = Verifiabl::Issuer::Configuration.new(
 )
 ```
 
-You can also use a different Active Support cache store, or any object with `read(key)` and
-`write(key, value, expires_in:, unless_exist: false)`. With `unless_exist: true`, `write` must
-write only if the key is absent, and return `false` if the key exists.
+Not every store stops several processes from fetching at once. Before you choose a store, read
+[Share tokens between worker processes](https://docs.verifiabl.io/issuer-sdk?lang=ruby#share-tokens-between-worker-processes).
 
-The client encrypts each token with a key derived from the client secret before it writes the
-token. It names the entry with a keyed hash. The cache never holds a usable token or the client
-credentials.
-
-Each process uses its in-memory token. It reads the store only when that token is due for
-renewal, one minute before it expires. When the stored token is missing or due, one process
-claims the fetch and fetches a new token. The claim is an `unless_exist: true` write that lasts
-for 10 seconds, the limit of the token request. While that process fetches:
-
-- A process with a valid token continues to use it until the new token is in the store.
-- A process with no valid token polls the store for the new token. The interval starts at 0.1
-  seconds and doubles to a maximum of one second. If the claim expires, that process claims the
-  fetch.
-
-A fleet that renews together, or starts together after a quiet period, therefore fetches one
-token. When the API rejects a token, the client fetches a new token immediately. If the client
-fetched the rejected token less than one minute before, it returns the 401 instead.
-
-Limits:
-
-- A store failure costs a token fetch, not a registration. `Rails.cache` catches backend errors
-  and sends them to the Rails error reporter and logger, so `on_error` does not get them. To get
-  them in `on_error`, as an event with `token_store:` (`:read`, `:write` or `:claim`) and
-  `error:`, give the SDK a different store with an `error_handler:` that raises the exception
-  again. Do not make `Rails.cache` raise.
-- If the process that holds the claim stops during its fetch, the processes with no token wait
-  until the claim expires, at most 10 seconds.
-- The SDK cannot interrupt a store call. It checks the request's time budget after each call,
-  and store calls run while the client holds its token lock. Keep the store timeouts short. The
-  Rails Redis store default is one second.
-- The claim is best effort. If the store has no atomic `unless_exist`, such as a file store,
-  several processes can fetch. A store that is local to each process, such as a memory store,
-  shares nothing.
-- Stored expiry times are absolute. Keep worker clocks within one minute of each other.
-
-A store event has only `token_store:` and `error:`. A request failure has `method:`, `url:`,
-`path:` and `elapsed_ms:`. Check the kind of event before you read its fields. The SDK ignores
-exceptions from `on_error`, so if your handler fails on a store event, the report is lost:
+If the store raises an error, `on_error` gets an event with only `token_store:` and `error:`.
+Check the kind of event before you read its fields:
 
 ```ruby
 on_error = lambda do |event|
@@ -157,6 +118,27 @@ shutdown, thread safety, and post-fork recreation.
 ## Support
 
 Report issues at [github.com/Verifiabl/verifiabl-ruby](https://github.com/Verifiabl/verifiabl-ruby/issues).
+
+## Verifying a release
+
+The release workflow attests each gem's build provenance before publishing it, and RubyGems.org
+serves the published bytes unchanged. Verify a gem with the [GitHub CLI](https://cli.github.com/).
+Attestations are signed with Sigstore, recorded in its public transparency log, and stored with the
+`Verifiabl/verifiabl-ruby` repository; they do not expire with workflow artifacts.
+
+```sh
+VERSION='<release version, for example 0.1.0-rc.1>'
+RUBYGEMS_VERSION="$(ruby -rrubygems -e 'puts Gem::Version.new(ARGV.fetch(0))' "$VERSION")"
+gem fetch verifiabl-issuer --version "$RUBYGEMS_VERSION"
+gh attestation verify "verifiabl-issuer-$RUBYGEMS_VERSION.gem" \
+  --repo Verifiabl/verifiabl-ruby \
+  --signer-workflow Verifiabl/verifiabl-ruby/.github/workflows/release.yml \
+  --source-ref "refs/tags/issuer/v$VERSION" \
+  --deny-self-hosted-runners
+```
+
+Release tags use the SemVer version; RubyGems normalizes prereleases, so `0.1.0-rc.1` is published
+as `0.1.0.pre.rc.1`.
 
 ## License
 

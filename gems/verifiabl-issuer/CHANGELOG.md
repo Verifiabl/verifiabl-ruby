@@ -4,6 +4,21 @@ All notable changes to the Verifiabl Ruby SDK will be documented in this file.
 
 ## Unreleased
 
+## [1.1.1] - 2026-10-28
+
+### Added
+
+- Each released gem has a GitHub build-provenance attestation, made before
+  publication. The README's "Verifying a release" section shows how to check
+  a downloaded gem with `gh attestation verify`.
+
+### Changed
+
+- The README section on `token_store:` now links to the documentation for
+  store choice and limits. It no longer recommends Solid Cache with Redis
+  and Memcached, and no longer tells Memcached users to set an
+  `error_handler:`.
+
 ## [1.1.0] - 2026-10-23
 
 ### Added
