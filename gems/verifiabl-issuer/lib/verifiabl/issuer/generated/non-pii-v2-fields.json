@@ -58,6 +58,32 @@
       }
     ],
     "reimbursements": "decimal",
+    "leave_balances": {
+      "annual": {
+        "amount": "decimal",
+        "unit": null
+      },
+      "annual_accrued_this_period": {
+        "amount": "decimal",
+        "unit": null
+      },
+      "personal": {
+        "amount": "decimal",
+        "unit": null
+      },
+      "personal_accrued_this_period": {
+        "amount": "decimal",
+        "unit": null
+      },
+      "long_service": {
+        "amount": "decimal",
+        "unit": null
+      },
+      "long_service_accrued_this_period": {
+        "amount": "decimal",
+        "unit": null
+      }
+    },
     "ytd": {
       "taxable": "decimal",
       "super": "decimal",

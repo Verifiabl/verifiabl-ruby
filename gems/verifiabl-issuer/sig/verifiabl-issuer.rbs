@@ -15,6 +15,7 @@ module Verifiabl
         ETP_TYPES: Array[String]
         ETP_COMPONENTS: Array[String]
         PAY_FREQUENCIES: Array[String]
+        LEAVE_BALANCE_UNITS: Array[String]
       end
 
       module NewZealand

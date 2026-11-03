@@ -44,6 +44,10 @@ module Verifiabl
         BASE_RATE_PERIODS = %w[
           hour day week fortnight month year
         ].map!(&:freeze).freeze
+
+        LEAVE_BALANCE_UNITS = %w[
+          hours days weeks
+        ].map!(&:freeze).freeze
       end
 
       module NewZealand

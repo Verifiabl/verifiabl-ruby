@@ -695,6 +695,16 @@
           }
         },
         {
+          "path": "Verifiabl::Issuer::PayslipCodes::Australian::LEAVE_BALANCE_UNITS",
+          "name": "LEAVE_BALANCE_UNITS",
+          "kind": "constant",
+          "signature": "LEAVE_BALANCE_UNITS: Array[String]",
+          "documentation": {
+            "summary": "",
+            "tags": []
+          }
+        },
+        {
           "path": "Verifiabl::Issuer::PayslipCodes::Australian::LUMP_SUM_TYPES",
           "name": "LUMP_SUM_TYPES",
           "kind": "constant",
