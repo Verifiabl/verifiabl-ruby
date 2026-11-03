@@ -2,7 +2,14 @@
 
 All notable changes to the Verifiabl Ruby SDK will be documented in this file.
 
-## Unreleased
+## [1.2.0] - 2026-11-03
+
+### Added
+
+- AU2 `leave_balances`: `annual`, `personal` and `long_service`, each with its
+  accrual this period, as `{amount:, unit:}` with `unit` from
+  `PayslipCodes::Australian::LEAVE_BALANCE_UNITS` (`hours`, `days` or
+  `weeks`). Needs an API that accepts AU2 leave balances.
 
 ## [1.1.1] - 2026-10-28
 

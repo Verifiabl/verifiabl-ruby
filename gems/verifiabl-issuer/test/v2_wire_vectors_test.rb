@@ -25,6 +25,20 @@ class V2WireVectorsTest < Minitest::Test
         {type: "etp", etp_type: "redundancy_split", etp_component: "taxable", amount: "12000.00", units: "8", rate: "1500.00"}
       ]
     },
+    "au-leave-balances" => {
+      period_start: "2026-08-01", period_end: "2026-08-14", payment_date: "2026-08-18",
+      currency: "AUD", gross: "3100.00", paygw: "620.00", net: "2480.00",
+      pay_frequency: "fortnightly",
+      earnings: [{type: "ordinary", amount: "3100.00"}],
+      leave_balances: {
+        annual: {amount: "98.50", unit: "hours"},
+        annual_accrued_this_period: {amount: "5.85", unit: "hours"},
+        personal: {amount: "-4.00", unit: "hours"},
+        personal_accrued_this_period: {amount: "2.92", unit: "hours"},
+        long_service: {amount: "1.5", unit: "weeks"},
+        long_service_accrued_this_period: {amount: "0.03", unit: "weeks"}
+      }
+    },
     "nz-leave-and-dates" => {
       period_end: "2026-08-31", payment_date: "2026-09-04", currency: "NZD",
       gross: "7600.00", paye: "1710.00", net: "5890.00",

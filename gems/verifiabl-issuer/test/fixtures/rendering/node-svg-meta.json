@@ -4,7 +4,7 @@
     "generatedBy": "@verifiabl/sdks cross-SDK QR artifact generator v1",
     "source": {
       "package": "@verifiabl/issuer",
-      "version": "1.0.0"
+      "version": "1.1.0"
     },
     "tools": {
       "node": "v26",
